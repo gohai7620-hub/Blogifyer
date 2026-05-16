@@ -7,7 +7,7 @@ const router = Router();
 router.get("/signin", (req, res) => res.render("signin"));
 router.get("/signup", (req, res) => res.render("signup"));
 
-// ====================== SIGNIN WITH OTP (New Logic) ======================
+// ====================== SIGNIN WITH OTP ======================
 router.post("/signin/send-otp", async (req, res) => {
     const { fullName, email, password } = req.body;
 
@@ -18,10 +18,10 @@ router.post("/signin/send-otp", async (req, res) => {
     try {
         const existingUser = await User.findOne({ email });
 
-        // If user exists and is verified, check password
+        // If user already exists and verified → Check password
         if (existingUser && existingUser.isVerified) {
             try {
-                await User.matchPassword(email, password); // will throw if wrong password
+                await User.matchPassword(email, password);
                 return res.json({ 
                     success: true, 
                     alreadyLoggedIn: true, 
@@ -32,7 +32,7 @@ router.post("/signin/send-otp", async (req, res) => {
             }
         }
 
-        // New User or Unverified → Send OTP
+        // New User → Send OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await User.findOneAndUpdate(
@@ -53,12 +53,12 @@ router.post("/signin/send-otp", async (req, res) => {
 
         res.json({ success: true, message: "OTP sent to your email" });
     } catch (error) {
-        console.error(error);
+        console.error("Send OTP Error:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
-// Verify OTP & Login
+// ====================== VERIFY OTP & CREATE/LOGIN ======================
 router.post("/signin/verify-otp", async (req, res) => {
     const { email, otp } = req.body;
 
@@ -73,18 +73,17 @@ router.post("/signin/verify-otp", async (req, res) => {
         user.otpExpiry = undefined;
         await user.save();
 
-        const token = await User.matchPassword(email, user.password); // Wait, better to generate token directly
-
-        // Better: Generate token manually
-        const finalToken = require("../services/authentication").creatTokenForUser(user);
+        // Generate JWT Token
+        const { creatTokenForUser } = require("../services/authentication");
+        const token = creatTokenForUser(user);
 
         res.json({ 
             success: true, 
             message: "Login successful", 
-            token: finalToken 
+            token 
         });
     } catch (error) {
-        console.error(error);
+        console.error("Verify OTP Error:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 });
@@ -94,22 +93,80 @@ router.post("/forgot-password", async (req, res) => {
     const { email } = req.body;
     try {
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ success: false, message: "No account found" });
+        if (!user) {
+            return res.status(400).json({ success: false, message: "No account found with this email" });
+        }
 
         const resetToken = user.generateResetToken();
         await user.save();
 
-        await sendPasswordResetLink(email, resetToken);
-        res.json({ success: true, message: "Reset link sent (valid 2 minutes)" });
+        const sent = await sendPasswordResetLink(email, resetToken);
+        if (sent) {
+            res.json({ success: true, message: "Reset link sent! Valid for 2 minutes." });
+        } else {
+            res.status(500).json({ success: false, message: "Failed to send reset email" });
+        }
     } catch (error) {
+        console.error("Forgot Password Error:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
-// Reset Password Routes (Keep as before)
-router.get("/reset-password/:token", async (req, res) => { ... });   // Same as previous
-router.post("/reset-password/:token", async (req, res) => { ... });  // Same as previous
+// ====================== RESET PASSWORD ======================
+router.get("/reset-password/:token", async (req, res) => {
+    try {
+        const user = await User.findOne({
+            resetToken: req.params.token,
+            resetTokenExpiry: { $gt: Date.now() }
+        });
 
-router.get("/logout", (req, res) => res.clearCookie("token").redirect("/"));
+        if (!user) {
+            return res.render("reset-password", { 
+                error: "Invalid or expired reset link. Please request a new one." 
+            });
+        }
+
+        res.render("reset-password", { 
+            token: req.params.token, 
+            email: user.email 
+        });
+    } catch (error) {
+        res.render("reset-password", { error: "Something went wrong" });
+    }
+});
+
+router.post("/reset-password/:token", async (req, res) => {
+    const { password, confirmPassword } = req.body;
+    const { token } = req.params;
+
+    if (password !== confirmPassword) {
+        return res.status(400).json({ success: false, message: "Passwords do not match" });
+    }
+
+    try {
+        const user = await User.findOne({
+            resetToken: token,
+            resetTokenExpiry: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid or expired reset link" });
+        }
+
+        user.password = password;
+        user.resetToken = undefined;
+        user.resetTokenExpiry = undefined;
+        await user.save();
+
+        res.json({ success: true, message: "Password updated successfully!" });
+    } catch (error) {
+        console.error("Reset Password Error:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+router.get("/logout", (req, res) => {
+    return res.clearCookie("token").redirect("/");
+});
 
 module.exports = router;
