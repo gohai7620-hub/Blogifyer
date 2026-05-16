@@ -1,51 +1,56 @@
 const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
+const UserRoute = require("./routes/User");
+const UserBlogsRoute = require("./routes/Blog");
+const Blog = require("./models/blog");
+const cookieParser = require("cookie-parser");
+const { checkForAuthenticationCookie } = require("./middlewares/authentication");
 const dotenv = require("dotenv");
-
 dotenv.config();
 
+const PORT = process.env.PORT || 8000;
 const app = express();
 
-console.log("🚀 Server Starting...");
 
-// MongoDB Connection (Simplified)
+
+
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log("✅ MongoDB Connected Successfully"))
-    .catch((err) => console.error("❌ MongoDB Error:", err.message));
+    .then(() => console.log(`MongoDB Connected to: ${localDB}`))
+    .catch((err) => console.error("Mongo Connection Error:", err));
 
-// View Engine
 app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
 
-// Middlewares
-app.use(require("cookie-parser")());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: false }));
+
+// Fixed: Correct root static file serving path definition
 app.use("/", express.static(path.resolve("./public")));
 
-// Home Route
+app.use(checkForAuthenticationCookie("token"));
+
 app.get("/", async (req, res) => {
     try {
-        const Blog = require("./models/Blog");
-        const allBlogs = await Blog.find({}).sort({ createdAt: -1 }).lean();
+        // Fixed: Passed a proper object configuration into sort() to prevent runtime crashes
+        const allBlogs = await Blog.find({}).sort({ createdAt: -1 });
         
         res.render("home", {
-            user: null,
-            blogs: allBlogs || []
+            user: req.user,
+            blogs: allBlogs
         });
     } catch (error) {
-        console.error("❌ Home Route Error:", error.message);
+        console.error("Error fetching blogs:", error);
         res.status(500).send("Internal Server Error");
     }
 });
 
-console.log("✅ Basic routes loaded");
+app.use("/user", UserRoute);
+app.use("/blogs", UserBlogsRoute);
 
-// Start Server for Render
-const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`Server started at http://localhost:${PORT}`);
 });
 
 module.exports = app;
