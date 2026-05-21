@@ -5,32 +5,34 @@ const { creatTokenForUser } = require("../services/authentication");
 
 const router = Router();
 
-// ====================== GOOGLE STRATEGY ======================
+// ====================== GOOGLE STRATEGY SETUP ======================
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
-const configureGoogleStrategy = () => {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        console.warn("⚠️ Google OAuth credentials missing. Google login will not work.");
-        return;
-    }
-
-    passport.use(new GoogleStrategy({
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use("google", new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL
+        callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:8000/user/auth/google/callback"
     }, async (accessToken, refreshToken, profile, done) => {
         try {
             const user = await User.findOrCreateGoogleUser(profile);
             return done(null, user);
         } catch (err) {
+            console.error("Google Strategy Error:", err);
             return done(err, null);
         }
     }));
-};
 
-configureGoogleStrategy();
+    console.log("✅ Google OAuth Strategy Registered Successfully");
+} else {
+    console.warn("⚠️ Google OAuth credentials not found. Google login disabled.");
+}
 
-passport.serializeUser((user, done) => done(null, user.id));
+// ====================== PASSPORT SESSION SETUP ======================
+passport.serializeUser((user, done) => {
+    done(null, user.id);
+});
+
 passport.deserializeUser(async (id, done) => {
     try {
         const user = await User.findById(id);
@@ -48,9 +50,9 @@ router.post("/signup", async (req, res) => {
     const { fullName, email, password } = req.body;
     try {
         await User.create({ fullName, email, password });
-        return res.redirect("/user/signin");
+        res.redirect("/user/signin");
     } catch (error) {
-        return res.render("signup", { error: "Email already registered" });
+        res.render("signup", { error: "Email already registered" });
     }
 });
 
@@ -72,13 +74,19 @@ router.get("/logout", (req, res) => {
     res.clearCookie("token").redirect("/");
 });
 
-// ====================== GOOGLE OAUTH ======================
-router.get("/auth/google", passport.authenticate("google", { 
-    scope: ["profile", "email"] 
-}));
+// ====================== GOOGLE OAUTH ROUTES ======================
+router.get("/auth/google", (req, res, next) => {
+    if (!process.env.GOOGLE_CLIENT_ID) {
+        return res.render("signin", { error: "Google login is not configured" });
+    }
+    passport.authenticate("google", { scope: ["profile", "email"] })(req, res, next);
+});
 
 router.get("/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/user/signin" }),
+    passport.authenticate("google", { 
+        failureRedirect: "/user/signin",
+        failureMessage: true 
+    }),
     (req, res) => {
         const token = creatTokenForUser(req.user);
         res.cookie("token", token, {
