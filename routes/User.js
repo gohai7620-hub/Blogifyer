@@ -1,44 +1,83 @@
 const { Router } = require("express");
+const passport = require("passport");
 const User = require("../models/user");
+const { creatTokenForUser } = require("../services/authentication");
 
 const router = Router();
 
+// ====================== PASSPORT GOOGLE SETUP ======================
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        const user = await User.findOrCreateGoogleUser(profile);
+        return done(null, user);
+    } catch (err) {
+        return done(err, null);
+    }
+}));
+
+passport.serializeUser((user, done) => done(null, user.id));
+passport.deserializeUser(async (id, done) => {
+    try {
+        const user = await User.findById(id);
+        done(null, user);
+    } catch (err) {
+        done(err, null);
+    }
+});
+
+// ====================== NORMAL ROUTES ======================
 router.get("/signin", (req, res) => res.render("signin"));
 router.get("/signup", (req, res) => res.render("signup"));
 
 router.post("/signup", async (req, res) => {
     const { fullName, email, password } = req.body;
-
     try {
         await User.create({ fullName, email, password });
-        console.log("User created:", email);
         return res.redirect("/user/signin");
     } catch (error) {
-        console.error("Signup Error:", error.message);
-        return res.render("signup", { 
-            error: "Email already registered or invalid data" 
-        });
+        return res.render("signup", { error: "Email already registered" });
     }
 });
 
 router.post("/signin", async (req, res) => {
     const { email, password } = req.body;
-
     try {
         const token = await User.matchPassword(email, password);
-        return res.cookie("token", token, {
+        res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict"
         }).redirect("/");
     } catch (error) {
-        console.error("Signin Error:", error.message);
-        return res.render("signin", { error: "Incorrect Email or Password" });
+        res.render("signin", { error: "Incorrect Email or Password" });
     }
 });
 
 router.get("/logout", (req, res) => {
-    return res.clearCookie("token").redirect("/");
+    res.clearCookie("token").redirect("/");
 });
+
+// ====================== GOOGLE OAUTH ROUTES ======================
+router.get("/auth/google", passport.authenticate("google", { 
+    scope: ["profile", "email"] 
+}));
+
+router.get("/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/user/signin" }),
+    (req, res) => {
+        const token = creatTokenForUser(req.user);
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict"
+        }).redirect("/");
+    }
+);
 
 module.exports = router;
