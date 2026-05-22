@@ -4,19 +4,41 @@ const { createHmac, randomBytes } = require("crypto");
 const { creatTokenForUser } = require("../services/authentication");
 
 const UserSchema = new Schema({
-    fullName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    salt: { type: String },
-    password: { type: String },
-    googleId: { type: String, unique: true, sparse: true },
-    profileImageURL: { type: String, default: "/imgs/default.png" },
-    role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
+    fullName: { 
+        type: String, 
+        required: true 
+    },
+    email: { 
+        type: String, 
+        required: true, 
+        unique: true 
+    },
+    salt: { 
+        type: String 
+    },
+    password: { 
+        type: String 
+    },
+    googleId: { 
+        type: String, 
+        unique: true, 
+        sparse: true 
+    },
+    profileImageURL: { 
+        type: String, 
+        default: "/imgs/default.png" 
+    },
+    role: { 
+        type: String, 
+        enum: ["USER", "ADMIN"], 
+        default: "USER" 
+    },
 }, { timestamps: true });
 
-// ====================== PASSWORD HASHING ======================
-UserSchema.pre("save", function (next) {
+// ====================== PASSWORD HASHING (FIXED) ======================
+UserSchema.pre("save", async function () {
+    // Skip hashing for Google users or if password is not being set/modified
     if (!this.password || !this.isModified("password") || this.googleId) {
-        next();
         return;
     }
 
@@ -28,10 +50,9 @@ UserSchema.pre("save", function (next) {
 
         this.salt = salt;
         this.password = hashedPassword;
-        next();
     } catch (error) {
-        console.error("Password Hashing Error:", error);
-        next(error);
+        console.error("❌ Password Hashing Error:", error);
+        throw error;                    // Important for error handling
     }
 });
 
@@ -51,28 +72,38 @@ UserSchema.static("matchPassword", async function (email, password) {
 });
 
 UserSchema.static("findOrCreateGoogleUser", async function (profile) {
-    let user = await this.findOne({ googleId: profile.id });
+    try {
+        // Check if user exists with Google ID
+        let user = await this.findOne({ googleId: profile.id });
 
-    if (!user) {
-        user = await this.findOne({ email: profile.emails[0].value });
+        if (!user) {
+            // Check if user exists with same email
+            user = await this.findOne({ email: profile.emails[0].value });
 
-        if (user) {
-            user.googleId = profile.id;
-            if (profile.photos?.[0]?.value) {
-                user.profileImageURL = profile.photos[0].value;
+            if (user) {
+                // Link Google account to existing user
+                user.googleId = profile.id;
+                if (profile.photos?.[0]?.value) {
+                    user.profileImageURL = profile.photos[0].value;
+                }
+                await user.save();
+            } else {
+                // Create new user with Google data
+                user = await this.create({
+                    fullName: profile.displayName,
+                    email: profile.emails[0].value,
+                    googleId: profile.id,
+                    profileImageURL: profile.photos?.[0]?.value || "/imgs/default.png"
+                });
             }
-            await user.save();
-        } else {
-            user = await this.create({
-                fullName: profile.displayName,
-                email: profile.emails[0].value,
-                googleId: profile.id,
-                profileImageURL: profile.photos?.[0]?.value || "/imgs/default.png"
-            });
         }
+        return user;
+    } catch (error) {
+        console.error("❌ findOrCreateGoogleUser Error:", error);
+        throw error;
     }
-    return user;
 });
 
 const User = mongoose.models.user || model("user", UserSchema);
+
 module.exports = User;
