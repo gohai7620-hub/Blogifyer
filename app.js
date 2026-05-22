@@ -12,26 +12,22 @@ const { checkForAuthenticationCookie } = require("./middlewares/authentication")
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// ====================== ENVIRONMENT VARIABLES ======================
+// ====================== ENVIRONMENT ======================
 if (process.env.NODE_ENV !== "production") {
     require("dotenv").config();
 }
 
-// ====================== MongoDB Connection ======================
+// ====================== MongoDB ======================
 const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-    console.error("❌ MONGODB_URI is missing!");
-} else {
+if (MONGODB_URI) {
     mongoose.connect(MONGODB_URI, {
         serverSelectionTimeoutMS: 30000,
-        socketTimeoutMS: 60000,
     })
-    .then(() => console.log("✅ MongoDB Connected Successfully"))
-    .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
+    .then(() => console.log("✅ MongoDB Connected"))
+    .catch(err => console.error("❌ MongoDB Error:", err.message));
 }
 
-// ====================== Middleware ======================
+// ====================== VIEW & BASIC MIDDLEWARE ======================
 app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
 
@@ -40,7 +36,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.resolve("./public")));
 
-// === PASSPORT INITIALIZATION (REQUIRED FOR GOOGLE OAUTH) ===
+// === PASSPORT MUST BE BEFORE ROUTES ===
 app.use(passport.initialize());
 
 app.use(checkForAuthenticationCookie("token"));
@@ -49,24 +45,18 @@ app.use(checkForAuthenticationCookie("token"));
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
-        const allBlogs = await Blog.find({})
-            .sort({ createdAt: -1 })
+        const allBlogs = await Blog.find({}).sort({ createdAt: -1 })
             .populate("createdBy", "fullName profileImageURL")
             .lean();
 
-        res.render("home", { 
-            user: req.user || null,
-            blogs: allBlogs || [] 
-        });
+        res.render("home", { user: req.user || null, blogs: allBlogs });
     } catch (error) {
-        console.error("🚨 Home Route Error:", error.message);
-        res.status(500).send("Internal Server Error");
+        console.error("Home Error:", error);
+        res.status(500).send("Server Error");
     }
 });
 
 app.use("/user", UserRoute);
 app.use("/blogs", BlogRoute);
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
