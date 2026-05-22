@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Blogify</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,7 +15,6 @@
             align-items: center;
             padding: 20px;
         }
-
         .signup-container {
             background: white;
             padding: 40px 30px;
@@ -29,42 +23,27 @@
             width: 100%;
             max-width: 420px;
         }
+        h2 { text-align: center; color: #1a1a1a; margin-bottom: 24px; font-size: 28px; }
 
-        h2 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 24px;
-            font-size: 28px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
+        .form-group { margin-bottom: 20px; }
         label {
             display: block;
             margin-bottom: 8px;
             color: #555;
             font-weight: 500;
         }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
+        input[type="text"], input[type="email"], input[type="password"] {
             width: 100%;
             padding: 14px 16px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 16px;
-            transition: all 0.3s;
         }
-
         input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
         button[type="submit"] {
             width: 100%;
             padding: 14px;
@@ -76,63 +55,9 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 10px;
-            transition: background 0.3s;
         }
-
-        button[type="submit"]:hover {
-            background: #5568d3;
-        }
-
-        button[type="submit"]:disabled {
-            background: #a5b4fc;
-            cursor: not-allowed;
-        }
-
-        .google-btn {
-            width: 100%;
-            padding: 14px;
-            background: white;
-            color: #333;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .google-btn:hover {
-            background: #f8f9fa;
-            border-color: #667eea;
-        }
-
-        .divider {
-            text-align: center;
-            margin: 24px 0;
-            color: #9ca3af;
-            position: relative;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #e5e7eb;
-        }
-
-        .divider span {
-            background: white;
-            padding: 0 15px;
-            position: relative;
-        }
+        button[type="submit"]:hover { background: #5568d3; }
+        button[type="submit"]:disabled { background: #a5b4fc; cursor: not-allowed; }
 
         .alert {
             padding: 12px;
@@ -142,217 +67,102 @@
             display: none;
             font-weight: 500;
         }
+        .alert-success { color: #10b981; background: #d1fae5; }
+        .alert-error { color: #ef4444; background: #fee2e2; }
 
-        .alert-success {
-            color: #10b981;
-            background: #d1fae5;
-        }
-
-        .alert-error {
-            color: #ef4444;
-            background: #fee2e2;
-        }
-
+        /* Modal Styles */
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
-
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { display: flex; }
 
         .modal {
             background: white;
             padding: 32px 24px;
             border-radius: 20px;
-            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
             width: 100%;
             max-width: 400px;
             text-align: center;
             position: relative;
         }
-
         .btn-close {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 12px; right: 12px;
             font-size: 28px;
             background: none;
             border: none;
             cursor: pointer;
             color: #6b7280;
-            line-height: 1;
         }
-
-        .btn-close:hover {
-            color: #1f2937;
-        }
-
-        .modal-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
-        .modal h3 {
-            color: #1a1a1a;
-            margin-bottom: 8px;
-            font-size: 22px;
-        }
-
-        .modal p {
-            color: #6b7280;
-            margin-bottom: 24px;
-        }
-
         .otp-inputs {
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 24px;
+            margin: 20px 0;
         }
-
         .otp-digit {
-            width: 45px;
-            height: 50px;
+            width: 48px;
+            height: 52px;
             text-align: center;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
-            transition: all 0.3s;
         }
-
         .otp-digit:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
             outline: none;
         }
-
-        .btn-verify {
+        .btn-verify, .btn-resend {
             width: 100%;
             padding: 14px;
-            background: #667eea;
-            color: white;
+            margin: 8px 0;
             border: none;
             border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            margin-bottom: 12px;
-            transition: background 0.3s;
         }
-
-        .btn-verify:hover {
-            background: #5568d3;
-        }
-
-        .btn-verify:disabled {
-            background: #a5b4fc;
-            cursor: not-allowed;
-        }
-
-        .btn-resend {
-            background: none;
-            border: none;
-            color: #667eea;
-            font-size: 15px;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .btn-resend:hover:not(:disabled) {
-            color: #5568d3;
-            text-decoration: underline;
-        }
-
-        .btn-resend:disabled {
-            color: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        .timer {
-            color: #9ca3af;
-            font-size: 14px;
-            margin-top: 8px;
-        }
-
-        .error-message {
-            color: #ef4444;
-            margin: 12px 0;
-            min-height: 20px;
-            font-weight: 500;
-        }
-
-        .success-message {
-            color: #10b981;
-            margin: 12px 0;
-            min-height: 20px;
-            font-weight: 500;
-        }
-
-        .signin-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #6b7280;
-        }
-
-        .signin-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .signin-link a:hover {
-            text-decoration: underline;
-        }
+        .btn-verify { background: #667eea; color: white; }
+        .btn-resend { background: none; color: #667eea; }
+        .error-message { color: #ef4444; margin: 10px 0; min-height: 22px; }
+        .success-message { color: #10b981; margin: 10px 0; min-height: 22px; }
     </style>
 </head>
 <body>
 
     <div class="signup-container">
         <h2>Create Account</h2>
-
         <div id="statusAlert" class="alert"></div>
 
         <form id="signupForm">
             <div class="form-group">
-                <label for="fullName">Full Name</label>
-                <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+                <label>Full Name</label>
+                <input type="text" id="fullName" required placeholder="Enter your full name">
             </div>
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email">
+                <label>Email Address</label>
+                <input type="email" id="email" required placeholder="Enter your email">
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Create password" minlength="6">
+                <label>Password</label>
+                <input type="password" id="password" required minlength="6" placeholder="Create password">
             </div>
             <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm password" minlength="6">
+                <label>Confirm Password</label>
+                <input type="password" id="confirmPassword" required minlength="6" placeholder="Confirm password">
             </div>
-            <button type="submit" id="signupSubmitBtn">Sign Up</button>
+            <button type="submit" id="signupBtn">Sign Up</button>
         </form>
 
-        <div class="divider"><span>OR</span></div>
-
-        <a href="/user/auth/google" class="google-btn">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
-                 alt="Google" width="20" height="20">
-            Continue with Google
-        </a>
-
-        <div class="signin-link">
+        <div class="signin-link" style="text-align:center; margin-top:20px;">
             Already have an account? <a href="/user/signin">Sign In</a>
         </div>
     </div>
@@ -360,35 +170,38 @@
     <!-- OTP Modal -->
     <div class="modal-overlay" id="otpModal">
         <div class="modal">
-            <button class="btn-close" onclick="closeModal()">&times;</button>
-            
-            <div class="modal-icon">&#128274;</div>
+            <button class="btn-close" onclick="closeModal()">×</button>
             <h3>Verify Your Email</h3>
-            <p>We have sent a 6-digit code to <strong id="displayEmail"></strong></p>
-            
+            <p>We sent a 6-digit code to <strong id="displayEmail"></strong></p>
+
             <div class="otp-inputs">
-                <input type="text" maxlength="1" class="otp-digit" data-index="0" inputmode="numeric">
-                <input type="text" maxlength="1" class="otp-digit" data-index="1" inputmode="numeric">
-                <input type="text" maxlength="1" class="otp-digit" data-index="2" inputmode="numeric">
-                <input type="text" maxlength="1" class="otp-digit" data-index="3" inputmode="numeric">
-                <input type="text" maxlength="1" class="otp-digit" data-index="4" inputmode="numeric">
-                <input type="text" maxlength="1" class="otp-digit" data-index="5" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-digit" data-index="0">
+                <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                <input type="text" maxlength="1" class="otp-digit" data-index="5">
             </div>
-            
+
             <div class="error-message" id="otpError"></div>
             <div class="success-message" id="otpSuccess"></div>
-            
+
             <button class="btn-verify" id="verifyBtn" onclick="verifyOTP()">Verify OTP</button>
             <button class="btn-resend" id="resendBtn" onclick="resendOTP()" disabled>Resend Code</button>
-            <div class="timer" id="timer"></div>
+            <div class="timer" id="timer" style="margin-top:8px; color:#666; font-size:14px;"></div>
         </div>
     </div>
 
     <script>
+        // Variables
+        let currentEmail = "";
+        let currentUserData = {};
+        let countdown = 300;
+        let timerInterval;
+
         const signupForm = document.getElementById('signupForm');
-        const signupSubmitBtn = document.getElementById('signupSubmitBtn');
+        const signupBtn = document.getElementById('signupBtn');
         const statusAlert = document.getElementById('statusAlert');
-        
         const modal = document.getElementById('otpModal');
         const displayEmail = document.getElementById('displayEmail');
         const otpInputs = document.querySelectorAll('.otp-digit');
@@ -396,59 +209,30 @@
         const otpSuccess = document.getElementById('otpSuccess');
         const verifyBtn = document.getElementById('verifyBtn');
         const resendBtn = document.getElementById('resendBtn');
-        
-        let currentEmail = "";
-        let currentUserData = {};
-        let countdown = 300;
-        let timerInterval;
 
-        // Show alert message
-        function showAlert(message, type = 'error') {
-            statusAlert.textContent = message;
-            statusAlert.className = 'alert alert-' + type;
+        function showAlert(msg, type = 'error') {
+            statusAlert.textContent = msg;
+            statusAlert.className = `alert alert-${type}`;
             statusAlert.style.display = 'block';
-            
-            if (type === 'success') {
-                setTimeout(hideAlert, 5000);
-            }
         }
 
-        // Hide alert message
-        function hideAlert() {
-            statusAlert.style.display = 'none';
-        }
-
-        // Form submission handler
+        // Signup Form Submit
         signupForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            hideAlert();
+            statusAlert.style.display = 'none';
 
             const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
-            // Client-side validation
-            if (!fullName || !email || !password || !confirmPassword) {
-                showAlert("All fields are required.");
-                return;
-            }
+            if (password !== confirmPassword) return showAlert("Passwords do not match.");
+            if (password.length < 6) return showAlert("Password must be at least 6 characters.");
 
-            if (password.length < 6) {
-                showAlert("Password must be at least 6 characters.");
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                showAlert("Passwords do not match.");
-                return;
-            }
-
-            // Store user data for resend functionality
             currentUserData = { fullName, email, password, confirmPassword };
 
-            signupSubmitBtn.disabled = true;
-            signupSubmitBtn.textContent = "Sending OTP...";
+            signupBtn.disabled = true;
+            signupBtn.textContent = "Sending OTP...";
 
             try {
                 const res = await fetch('/user/signup', {
@@ -459,110 +243,61 @@
 
                 const data = await res.json();
 
-                if (res.ok && data.success) {
+                if (data.success) {
                     currentEmail = email.toLowerCase();
                     displayEmail.textContent = currentEmail;
-                    
-                    // Clear OTP inputs
-                    otpInputs.forEach(input => input.value = '');
-                    otpError.textContent = '';
-                    otpSuccess.textContent = '';
-                    
-                    // Show modal and start timer
                     modal.classList.add('active');
                     otpInputs[0].focus();
                     startTimer();
-                    
-                    showAlert("OTP sent to your email!", "success");
+                    showAlert("OTP sent successfully!", "success");
                 } else {
-                    showAlert(data.message || "Failed to send OTP. Please try again.");
+                    showAlert(data.message || "Something went wrong.");
                 }
-
             } catch (err) {
-                console.error("Signup Error:", err);
-                showAlert("Network error. Please check your connection and try again.");
+                showAlert("Network error. Please try again.");
             } finally {
-                signupSubmitBtn.disabled = false;
-                signupSubmitBtn.textContent = "Sign Up";
+                signupBtn.disabled = false;
+                signupBtn.textContent = "Sign Up";
             }
         });
 
-        // OTP input navigation
+        // OTP Input Logic
         otpInputs.forEach((input, index) => {
-            // Only allow numbers
-            input.addEventListener('input', (e) => {
+            input.addEventListener('input', () => {
                 input.value = input.value.replace(/[^0-9]/g, '');
-                
-                if (input.value.length === 1 && index < 5) {
-                    otpInputs[index + 1].focus();
-                }
-                
-                // Clear error when typing
-                otpError.textContent = '';
+                if (input.value.length === 1 && index < 5) otpInputs[index + 1].focus();
             });
 
-            // Handle backspace
             input.addEventListener('keydown', (e) => {
                 if (e.key === "Backspace" && input.value === "" && index > 0) {
                     otpInputs[index - 1].focus();
                 }
-                
-                // Allow Enter to verify
-                if (e.key === "Enter") {
-                    verifyOTP();
-                }
-            });
-
-            // Handle paste
-            input.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const pastedContent = e.clipboardData.getData('text').trim();
-                
-                if (/^\d{6}$/.test(pastedContent)) {
-                    otpInputs.forEach((inp, idx) => {
-                        inp.value = pastedContent[idx];
-                    });
-                    otpInputs[5].focus();
-                }
-            });
-
-            // Select all on focus
-            input.addEventListener('focus', () => {
-                input.select();
+                if (e.key === "Enter") verifyOTP();
             });
         });
 
-        // Start countdown timer
         function startTimer() {
             clearInterval(timerInterval);
-            countdown = 300; // 5 minutes
+            countdown = 300;
             resendBtn.disabled = true;
 
             timerInterval = setInterval(() => {
                 const min = Math.floor(countdown / 60);
                 const sec = countdown % 60;
-                document.getElementById('timer').textContent = 'Code expires in ' + min + ':' + (sec < 10 ? '0' : '') + sec;
+                document.getElementById('timer').textContent = `Code expires in ${min}:${sec < 10 ? '0' : ''}${sec}`;
                 countdown--;
 
                 if (countdown < 0) {
                     clearInterval(timerInterval);
                     resendBtn.disabled = false;
-                    document.getElementById('timer').textContent = 'Code expired. Click resend to get a new code.';
+                    document.getElementById('timer').textContent = "Code expired. Resend to get new code.";
                 }
             }, 1000);
         }
 
-        // Verify OTP
         async function verifyOTP() {
-            otpError.textContent = "";
-            otpSuccess.textContent = "";
-            
             const otp = Array.from(otpInputs).map(i => i.value).join('');
-            
-            if (otp.length !== 6) {
-                otpError.textContent = "Please enter the complete 6-digit code.";
-                return;
-            }
+            if (otp.length !== 6) return otpError.textContent = "Please enter full 6-digit OTP";
 
             verifyBtn.disabled = true;
             verifyBtn.textContent = "Verifying...";
@@ -576,46 +311,25 @@
 
                 const data = await res.json();
 
-                if (res.ok && data.success) {
+                if (data.success) {
                     otpSuccess.textContent = "Verification successful! Redirecting...";
-                    clearInterval(timerInterval);
-                    
-                    setTimeout(() => {
-                        window.location.href = "/";
-                    }, 1500);
+                    setTimeout(() => window.location.href = "/", 1500);
                 } else {
-                    otpError.textContent = data.message || "Invalid OTP. Please try again.";
-                    
-                    // Clear inputs on error
-                    otpInputs.forEach(input => input.value = '');
+                    otpError.textContent = data.message || "Invalid OTP";
+                    otpInputs.forEach(i => i.value = '');
                     otpInputs[0].focus();
                 }
             } catch (err) {
-                console.error("Verify OTP Error:", err);
-                otpError.textContent = "Network error. Please try again.";
+                otpError.textContent = "Network error";
             } finally {
                 verifyBtn.disabled = false;
                 verifyBtn.textContent = "Verify OTP";
             }
         }
 
-        // Close modal
-        function closeModal() {
-            modal.classList.remove('active');
-            clearInterval(timerInterval);
-        }
-
-        // Resend OTP
         async function resendOTP() {
-            if (!currentUserData.email) {
-                closeModal();
-                return;
-            }
-
             resendBtn.disabled = true;
             resendBtn.textContent = "Sending...";
-            otpError.textContent = "";
-            otpSuccess.textContent = "";
 
             try {
                 const res = await fetch('/user/signup', {
@@ -626,37 +340,24 @@
 
                 const data = await res.json();
 
-                if (res.ok && data.success) {
-                    otpSuccess.textContent = "New OTP sent successfully!";
-                    otpInputs.forEach(input => input.value = '');
-                    otpInputs[0].focus();
+                if (data.success) {
+                    otpSuccess.textContent = "New OTP sent!";
+                    otpInputs.forEach(i => i.value = '');
                     startTimer();
                 } else {
-                    otpError.textContent = data.message || "Failed to resend OTP.";
-                    resendBtn.disabled = false;
+                    otpError.textContent = data.message || "Failed to resend";
                 }
             } catch (err) {
-                console.error("Resend OTP Error:", err);
-                otpError.textContent = "Network error. Please try again.";
-                resendBtn.disabled = false;
+                otpError.textContent = "Network error";
             } finally {
                 resendBtn.textContent = "Resend Code";
             }
         }
 
-        // Close modal on outside click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.classList.contains('active')) {
-                closeModal();
-            }
-        });
+        function closeModal() {
+            modal.classList.remove('active');
+            clearInterval(timerInterval);
+        }
     </script>
 </body>
 </html>
