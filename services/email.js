@@ -1,46 +1,43 @@
 // services/email.js
 const nodemailer = require('nodemailer');
 
-// Create transporter with Gmail settings
+// Create transporter with explicit Gmail SMTP settings
 const createTransporter = () => {
     return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // use SSL
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASSWORD
+        },
+        tls: {
+            rejectUnauthorized: false
         }
     });
-};
-
-// Verify transporter connection
-const verifyTransporter = async (transporter) => {
-    try {
-        await transporter.verify();
-        console.log('SMTP connection verified successfully');
-        return true;
-    } catch (error) {
-        console.error('SMTP verification failed:', error.message);
-        return false;
-    }
 };
 
 const sendOTP = async (email, otp) => {
     try {
         // Check if email credentials are configured
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-            console.error('EMAIL_USER or EMAIL_PASSWORD not configured in environment variables');
+            console.error('EMAIL_USER or EMAIL_PASSWORD not configured');
             return false;
         }
 
-        console.log(`Attempting to send OTP to: ${email}`);
-        console.log(`Using EMAIL_USER: ${process.env.EMAIL_USER}`);
+        console.log('Attempting to send OTP to:', email);
+        console.log('Using EMAIL_USER:', process.env.EMAIL_USER);
+        console.log('EMAIL_PASSWORD length:', process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.length : 0);
 
         const transporter = createTransporter();
 
-        // Verify connection first
-        const isVerified = await verifyTransporter(transporter);
-        if (!isVerified) {
-            console.error('Transporter verification failed - check your Gmail App Password');
+        // Verify connection
+        try {
+            await transporter.verify();
+            console.log('SMTP connection verified successfully');
+        } catch (verifyError) {
+            console.error('SMTP verification failed:', verifyError.message);
+            console.error('Full verify error:', verifyError);
             return false;
         }
 
@@ -64,21 +61,22 @@ const sendOTP = async (email, otp) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log(`OTP sent successfully to ${email} | Message ID: ${info.messageId}`);
+        console.log('OTP sent successfully to', email);
+        console.log('Message ID:', info.messageId);
         return true;
 
     } catch (error) {
-        console.error('Failed to send OTP email:', error.message);
+        console.error('Failed to send OTP email');
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
         console.error('Full error:', error);
         
-        // Provide helpful error messages
         if (error.code === 'EAUTH') {
-            console.error('Authentication failed - Please check:');
-            console.error('1. EMAIL_USER is correct');
-            console.error('2. EMAIL_PASSWORD is a valid Gmail App Password (not your regular password)');
-            console.error('3. 2-Step Verification is enabled on your Gmail account');
+            console.error('Authentication failed - Check EMAIL_USER and EMAIL_PASSWORD');
         } else if (error.code === 'ESOCKET' || error.code === 'ECONNECTION') {
-            console.error('Connection failed - Check your network or firewall settings');
+            console.error('Connection failed - Check network/firewall');
+        } else if (error.code === 'EENVELOPE') {
+            console.error('Invalid email address');
         }
         
         return false;
