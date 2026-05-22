@@ -7,7 +7,7 @@ const passport = require("passport");
 const UserRoute = require("./routes/User");
 const BlogRoute = require("./routes/Blog");
 const AdminRoute = require("./routes/Admin");
-const ProfileRoute = require("./routes/Profile");   // ← New
+const ProfileRoute = require("./routes/Profile");
 
 const { checkForAuthenticationCookie } = require("./middlewares/authentication");
 
@@ -60,7 +60,7 @@ app.get("/", async (req, res) => {
 
 // Routes
 app.use("/admin", AdminRoute);
-app.use("/user/profile", ProfileRoute);   // ← New Profile Route
+app.use("/user/profile", ProfileRoute);
 app.use("/user", UserRoute);
 app.use("/blogs", BlogRoute);
 
