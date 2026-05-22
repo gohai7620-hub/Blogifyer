@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const Blog = require("../models/Blog");
 const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
-const { uploadToCloudinary } = require("../services/cloudinary"); // Using your existing file
+const { uploadToCloudinary } = require("../middlewares/CloudinaryUploads"); // Using your existing file
 
 const upload = multer({ storage: multer.memoryStorage() });
 
