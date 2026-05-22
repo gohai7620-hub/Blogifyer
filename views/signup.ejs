@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Blogify</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -38,12 +34,12 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: #555;
             font-weight: 500;
         }
@@ -61,7 +57,6 @@
         input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         button {
@@ -77,9 +72,7 @@
             margin: 10px 0;
         }
 
-        button:hover {
-            background: #5568d3;
-        }
+        button:hover { background: #5568d3; }
 
         .google-btn {
             width: 100%;
@@ -94,7 +87,6 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin-top: 10px;
             text-decoration: none;
         }
 
@@ -109,8 +101,7 @@
             content: '';
             position: absolute;
             top: 50%;
-            left: 0;
-            right: 0;
+            left: 0; right: 0;
             height: 1px;
             background: #e5e7eb;
         }
@@ -120,43 +111,38 @@
             padding: 0 15px;
         }
 
-        .error {
-            color: #ef4444;
-            background: #fee2e2;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 10px 0;
-        }
+        .error { color: #ef4444; background: #fee2e2; padding: 12px; border-radius: 8px; text-align: center; margin: 10px 0; }
+        .success { color: #10b981; background: #d1fae5; padding: 12px; border-radius: 8px; text-align: center; margin: 10px 0; }
 
-        /* OTP Section */
+        /* OTP Input Boxes - Always Visible */
         .otp-section {
             margin-top: 20px;
             padding: 15px;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
+            background: #f8fafc;
         }
 
         .otp-inputs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
-            margin: 15px 0;
+            margin: 12px 0;
         }
 
         .otp-digit {
             width: 48px;
-            height: 52px;
+            height: 55px;
             text-align: center;
-            font-size: 22px;
+            font-size: 26px;
             font-weight: bold;
-            border: 2px solid #e5e7eb;
+            border: 2px solid #cbd5e1;
             border-radius: 10px;
         }
 
         .otp-digit:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
     </style>
 </head>
@@ -171,7 +157,7 @@
                 <input type="text" id="fullName" required placeholder="Enter your full name">
             </div>
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email">Email Address</label>
                 <input type="email" id="email" required placeholder="Enter your email">
             </div>
             <div class="form-group">
@@ -185,9 +171,9 @@
 
             <button type="button" onclick="sendOTP()">Send OTP</button>
 
-            <!-- OTP Input Fields -->
-            <div class="otp-section" id="otpSection" style="display: none;">
-                <label>Enter 6-Digit OTP</label>
+            <!-- OTP Input Boxes (Always Visible) -->
+            <div class="otp-section">
+                <label style="text-align:center; display:block; margin-bottom:8px;">Enter 6 Digit OTP</label>
                 <div class="otp-inputs">
                     <input type="text" maxlength="1" class="otp-digit" data-index="0" autofocus>
                     <input type="text" maxlength="1" class="otp-digit" data-index="1">
@@ -199,7 +185,7 @@
                 <button type="button" onclick="verifyOTP()">Verify OTP & Sign Up</button>
             </div>
 
-            <div class="error" id="message"></div>
+            <div id="message"></div>
         </form>
 
         <div class="divider"><span>OR</span></div>
@@ -216,7 +202,7 @@
         const messageDiv = document.getElementById('message');
         let currentEmail = "";
 
-        // Auto focus for OTP inputs
+        // OTP Auto Focus
         otpInputs.forEach((input, index) => {
             input.addEventListener('input', () => {
                 input.value = input.value.replace(/[^0-9]/g, '');
@@ -228,22 +214,13 @@
 
         async function sendOTP() {
             messageDiv.textContent = '';
-            const email = document.getElementById('email').value;
-            const fullName = document.getElementById('fullName').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            const email = document.getElementById('email').value.trim();
 
-            if (!email || !fullName || !password || !confirmPassword) {
-                messageDiv.textContent = "All fields are required";
+            if (!email) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = "Please enter your email first";
                 return;
             }
-
-            if (password !== confirmPassword) {
-                messageDiv.textContent = "Passwords do not match";
-                return;
-            }
-
-            currentEmail = email;
 
             try {
                 const res = await fetch('/send-otp', {
@@ -255,21 +232,34 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    document.getElementById('otpSection').style.display = 'block';
-                    messageDiv.style.color = 'green';
+                    currentEmail = email;
+                    messageDiv.className = 'success';
                     messageDiv.textContent = `✅ OTP sent to ${email}`;
                 } else {
+                    messageDiv.className = 'error';
                     messageDiv.textContent = data.message || "Failed to send OTP";
                 }
             } catch (err) {
-                messageDiv.textContent = "Something went wrong. Try again.";
+                messageDiv.className = 'error';
+                messageDiv.textContent = "Failed to send OTP. Try again.";
             }
         }
 
         async function verifyOTP() {
             const otp = Array.from(otpInputs).map(i => i.value).join('');
+            const fullName = document.getElementById('fullName').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
             if (otp.length !== 6) {
-                messageDiv.textContent = "Please enter all 6 digits";
+                messageDiv.className = 'error';
+                messageDiv.textContent = "Please fill all 6 OTP digits";
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = "Passwords do not match";
                 return;
             }
 
@@ -277,24 +267,22 @@
                 const res = await fetch('/verify-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: currentEmail,
-                        otp: otp,
-                        fullName: document.getElementById('fullName').value,
-                        password: document.getElementById('password').value
-                    })
+                    body: JSON.stringify({ email: currentEmail, otp, fullName, password })
                 });
 
                 const data = await res.json();
 
                 if (data.success) {
-                    alert("✅ Account created successfully!");
-                    window.location.href = "/";
+                    messageDiv.className = 'success';
+                    messageDiv.textContent = "✅ Account created successfully!";
+                    setTimeout(() => window.location.href = "/", 1500);
                 } else {
+                    messageDiv.className = 'error';
                     messageDiv.textContent = data.message || "Invalid OTP";
                 }
             } catch (err) {
-                messageDiv.textContent = "Verification failed. Please try again.";
+                messageDiv.className = 'error';
+                messageDiv.textContent = "Verification failed";
             }
         }
     </script>
