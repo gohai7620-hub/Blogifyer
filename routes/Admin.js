@@ -1,25 +1,25 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../models/user");
+const User = require("../models/User");
 const Blog = require("../models/Blog");
 
-const { restrictTo } = require("../middlewares/authentication"); // We'll create this
+const { restrictTo } = require("../middlewares/authentication");
 
-// Admin Middleware - Only ADMIN can access
+// Only ADMIN can access
 router.use(restrictTo(["ADMIN"]));
 
 // GET - All Users + Their Blogs
 router.get("/users", async (req, res) => {
     try {
         const users = await User.find({})
-            .select("fullName email profileImageURL role createdAt")
+            .select("fullName email profileImageURL role createdAt googleId")
             .sort({ createdAt: -1 })
             .lean();
 
-        // Get blog count for each user
+        // Get blogs with cover images
         const usersWithBlogs = await Promise.all(users.map(async (user) => {
             const blogs = await Blog.find({ createdBy: user._id })
-                .select("title createdAt")
+                .select("title coverImageURL createdAt")
                 .sort({ createdAt: -1 })
                 .lean();
 
@@ -45,21 +45,30 @@ router.delete("/users/:id", async (req, res) => {
     try {
         const userId = req.params.id;
 
-        // Optional: Prevent deleting yourself
+        // Prevent self-deletion
         if (userId === req.user._id.toString()) {
-            return res.status(400).json({ message: "You cannot delete yourself" });
+            return res.status(400).json({ 
+                success: false, 
+                message: "You cannot delete yourself" 
+            });
         }
 
-        // Delete user's blogs first
+        // Delete all blogs of this user first
         await Blog.deleteMany({ createdBy: userId });
 
         // Delete user
         await User.findByIdAndDelete(userId);
 
-        res.json({ success: true, message: "User and their blogs deleted successfully" });
+        res.json({ 
+            success: true, 
+            message: "User and all their blogs deleted successfully" 
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: "Failed to delete user" });
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to delete user" 
+        });
     }
 });
 
