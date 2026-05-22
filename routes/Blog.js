@@ -1,38 +1,62 @@
-const { Router } = require("express");
+const express = require("express");
+const router = express.Router();
 const Blog = require("../models/Blog");
+const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
 
-const router = Router();
+// Middleware - Only logged in users can create/edit blogs
+router.use(restrictToLoggedInUserOnly);
 
-// View Single Blog
-router.get("/:id", async (req, res) => {
+// GET - Add New Blog Form
+router.get("/add-new", (req, res) => {
+    res.render("addBlog", { user: req.user });
+});
+
+// POST - Create New Blog
+router.post("/add-new", async (req, res) => {
     try {
-        const blog = await Blog.findById(req.params.id)
-            .populate("createdBy", "fullName profileImageURL");
+        const { title, body } = req.body;
+        const coverImageURL = req.body.coverImageURL || null; // If using Cloudinary later
 
-        if (!blog) return res.status(404).send("Blog Not Found");
+        if (!title || !body) {
+            return res.render("addBlog", { 
+                user: req.user, 
+                error: "Title and Body are required" 
+            });
+        }
 
-        res.render("view", { blog, user: req.user });
+        const newBlog = await Blog.create({
+            title,
+            body,
+            coverImageURL,
+            createdBy: req.user._id
+        });
+
+        res.redirect(`/blogs/${newBlog._id}`);
     } catch (error) {
-        console.error("View Blog Error:", error);
-        res.status(500).send("Internal Server Error");
+        console.error("🚨 Blog Creation Error:", error);
+        res.render("addBlog", { 
+            user: req.user, 
+            error: "Something went wrong while creating blog" 
+        });
     }
 });
 
-// Delete Blog (Only Owner)
-router.delete("/:id", async (req, res) => {
+// GET - View Single Blog
+router.get("/:id", async (req, res) => {
     try {
-        const blog = await Blog.findById(req.params.id);
-        if (!blog) return res.status(404).json({ success: false, message: "Blog not found" });
+        const blog = await Blog.findById(req.params.id)
+            .populate("createdBy", "fullName profileImageURL")
+            .lean();
 
-        if (!req.user || String(blog.createdBy) !== String(req.user._id)) {
-            return res.status(403).json({ success: false, message: "Not authorized to delete this blog" });
-        }
+        if (!blog) return res.status(404).send("Blog not found");
 
-        await Blog.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: "Blog deleted successfully" });
+        res.render("blog", { 
+            user: req.user, 
+            blog 
+        });
     } catch (error) {
-        console.error("Delete Error:", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error(error);
+        res.status(500).send("Internal Server Error");
     }
 });
 
