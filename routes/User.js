@@ -15,6 +15,8 @@ router.get("/signup", (req, res) => res.render("signup"));
 router.post("/signup", async (req, res) => {
     const { fullName, email, password, confirmPassword } = req.body;
 
+    console.log('Signup request received for:', email);
+
     if (!fullName || !email || !password || !confirmPassword) {
         return res.status(400).json({ success: false, message: "All form fields are required." });
     }
@@ -31,6 +33,7 @@ router.post("/signup", async (req, res) => {
 
         // Generate clean 6 digit numeric code string
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        console.log(`Generated OTP for ${email}: ${otp}`);
 
         // Save records inside global context tracker
         otpStore.set(email.toLowerCase(), {
@@ -44,18 +47,22 @@ router.post("/signup", async (req, res) => {
         });
 
         // Trigger nodemailer sequence
+        console.log('Sending OTP email...');
         const emailSent = await sendOTP(email, otp);
 
         if (!emailSent) {
+            // Clean up stored data if email fails
+            otpStore.delete(email.toLowerCase());
             return res.status(500).json({ 
                 success: false, 
-                message: "Failed to send validation email. Check server authentication parameters." 
+                message: "Failed to send OTP email. Please check server logs and try again." 
             });
         }
 
+        console.log('OTP email sent successfully');
         return res.json({ 
             success: true, 
-            message: "OTP sent successfully! Please check your mailbox profile." 
+            message: "OTP sent successfully! Please check your email." 
         });
 
     } catch (error) {
@@ -68,28 +75,34 @@ router.post("/signup", async (req, res) => {
 router.post("/verify-otp", async (req, res) => {
     const { email, otp } = req.body;
 
+    console.log(`Verifying OTP for ${email}: ${otp}`);
+
     try {
         const stored = otpStore.get(email?.toLowerCase());
 
         if (!stored) {
-            return res.status(400).json({ success: false, message: "OTP session not found or invalid." });
+            console.log('No OTP found for email:', email);
+            return res.status(400).json({ success: false, message: "OTP session not found. Please request a new code." });
         }
 
         if (Date.now() > stored.expiry) {
             otpStore.delete(email.toLowerCase());
-            return res.status(400).json({ success: false, message: "Your verification code has expired." });
+            return res.status(400).json({ success: false, message: "Your verification code has expired. Please request a new one." });
         }
 
         if (stored.otp !== otp) {
-            return res.status(400).json({ success: false, message: "Incorrect OTP code. Try again." });
+            console.log(`OTP mismatch - Expected: ${stored.otp}, Received: ${otp}`);
+            return res.status(400).json({ success: false, message: "Incorrect OTP code. Please try again." });
         }
 
-        // Save target entity documentation directly down inside cloud collection system
+        console.log('OTP verified successfully, creating user...');
+
+        // Create user in database
         await User.create(stored.userData);
         otpStore.delete(email.toLowerCase());
 
-        // Perform password evaluation lookup to construct verification signature cookies
-        const token = await User.matchPassword(email, stored.userData.password);
+        // Generate authentication token
+        const token = await User.matchPassword(email.toLowerCase(), stored.userData.password);
 
         res.cookie("token", token, { 
             httpOnly: true, 
@@ -98,6 +111,7 @@ router.post("/verify-otp", async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 
         });
 
+        console.log('User created and authenticated successfully');
         return res.json({ success: true });
 
     } catch (error) {
