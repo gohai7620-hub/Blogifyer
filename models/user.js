@@ -15,12 +15,8 @@ const UserSchema = new Schema({
         lowercase: true,
         trim: true
     },
-    salt: { 
-        type: String 
-    },
-    password: { 
-        type: String 
-    },
+    salt: { type: String },
+    password: { type: String },
     googleId: { 
         type: String, 
         unique: true, 
@@ -37,7 +33,7 @@ const UserSchema = new Schema({
     },
 }, { timestamps: true });
 
-// ====================== PASSWORD HASHING (Only for Email Users) ======================
+// Password Hashing (Only for email/password users)
 UserSchema.pre("save", async function (next) {
     if (this.googleId || !this.password || !this.isModified("password")) {
         return next();
@@ -45,12 +41,10 @@ UserSchema.pre("save", async function (next) {
 
     try {
         const salt = randomBytes(16).toString("hex");
-        const hashedPassword = createHmac("sha256", salt)
+        this.salt = salt;
+        this.password = createHmac("sha256", salt)
             .update(this.password)
             .digest("hex");
-
-        this.salt = salt;
-        this.password = hashedPassword;
         next();
     } catch (error) {
         console.error("❌ Password Hashing Error:", error);
@@ -58,7 +52,7 @@ UserSchema.pre("save", async function (next) {
     }
 });
 
-// ====================== STATIC METHODS ======================
+// Match Password
 UserSchema.static("matchPassword", async function (email, password) {
     const user = await this.findOne({ email: email.toLowerCase() });
     if (!user) throw new Error("User not found");
@@ -73,46 +67,38 @@ UserSchema.static("matchPassword", async function (email, password) {
     return creatTokenForUser(user);
 });
 
-// ====================== GOOGLE USER CREATION (FORCE CREATE) ======================
+// Improved findOrCreateGoogleUser
 UserSchema.static("findOrCreateGoogleUser", async function (profile) {
     try {
         const email = profile.emails[0].value.toLowerCase();
-        const googleId = profile.id;
+        console.log(`🔍 Google Login: ${email}`);
 
-        console.log(`🔍 Google Login Attempt: ${email} (ID: ${googleId})`);
-
-        // Try finding by Google ID first
-        let user = await this.findOne({ googleId });
+        // Check by Google ID
+        let user = await this.findOne({ googleId: profile.id });
 
         if (!user) {
-            // Check by email (in case user signed up with email before)
+            // Check by email (if user signed up normally before)
             user = await this.findOne({ email });
 
             if (user) {
-                console.log(`🔗 Linking Google to existing account: ${email}`);
-                user.googleId = googleId;
-                if (profile.photos?.[0]?.value) {
-                    user.profileImageURL = profile.photos[0].value;
-                }
+                console.log(`🔗 Linking Google to existing user: ${email}`);
+                user.googleId = profile.id;
+                if (profile.photos?.[0]?.value) user.profileImageURL = profile.photos[0].value;
                 await user.save();
             } else {
-                // === FORCE CREATE NEW USER ===
-                console.log(`🆕 Creating NEW Google Account: ${email}`);
+                console.log(`🆕 Creating new Google user: ${email}`);
                 user = await this.create({
                     fullName: profile.displayName || "Google User",
                     email: email,
-                    googleId: googleId,
+                    googleId: profile.id,
                     profileImageURL: profile.photos?.[0]?.value || "/imgs/default.png"
                 });
-                console.log(`✅ New Google User Created Successfully! ID: ${user._id}`);
             }
-        } else {
-            console.log(`✅ Existing Google User Found: ${email}`);
         }
 
         return user;
     } catch (error) {
-        console.error("❌ findOrCreateGoogleUser FAILED:", error.message);
+        console.error("❌ Google User Error:", error.message);
         throw error;
     }
 });
