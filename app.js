@@ -70,3 +70,5 @@ app.use("/blogs", BlogRoute);
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
+
+module.exports = app;
