@@ -1,16 +1,14 @@
-// routes/User.js
-const { Router } = require("express");
-const User = require("../models/user");
-const { creatTokenForUser } = require("../services/authentication");
-const { sendOTPEmail } = require("../services/email");
+const express = require('express');
+const router = express.Router();
+const User = require('../models/user');
+const { sendOTPEmail } = require('../services/email');
+const bcrypt = require('bcryptjs');
 
-const router = Router();
+// In-memory OTP storage (email -> {otp, expires})
+const otpStore = new Map();
 
-router.get("/signin", (req, res) => res.render("signin"));
-router.get("/signup", (req, res) => res.render("signup"));
-
-// ====================== SEND OTP ======================
-router.post("/send-otp", async (req, res) => {
+// Send OTP
+router.post('/send-otp', async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
@@ -19,69 +17,55 @@ router.post("/send-otp", async (req, res) => {
 
     try {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = Date.now() + 5 * 60 * 1000; // 5 minutes
 
-        await User.findOneAndUpdate(
-            { email: email.toLowerCase() },
-            { 
-                email: email.toLowerCase(), 
-                otp, 
-                otpExpires: Date.now() + 5 * 60 * 1000 
-            },
-            { upsert: true, new: true }
-        );
+        // Store OTP in memory
+        otpStore.set(email, { otp, expires });
 
+        // Send Email
         await sendOTPEmail(email, otp);
 
         res.json({ success: true, message: 'OTP sent successfully' });
-
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Failed to send OTP' });
     }
 });
 
-// ====================== VERIFY OTP & CREATE ACCOUNT ======================
-router.post("/verify-otp", async (req, res) => {
-    const { email, otp, fullName, password } = req.body;
+// Signup Route
+router.post('/signup', async (req, res) => {
+    const { FullName, email, password, otp } = req.body;
 
     try {
-        const user = await User.findOne({ email: email.toLowerCase() });
+        // Check OTP from memory
+        const stored = otpStore.get(email);
 
-        if (!user || !user.otp || Date.now() > user.otpExpires) {
-            return res.json({ success: false, message: "OTP expired or invalid" });
+        if (!stored || stored.otp !== otp || stored.expires < Date.now()) {
+            return res.status(400).send("Invalid or expired OTP");
         }
 
-        if (user.otp !== otp) {
-            return res.json({ success: false, message: "Incorrect OTP" });
+        // Remove used OTP
+        otpStore.delete(email);
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).send("User already exists with this email");
         }
 
-        // Create final user (or update)
-        const newUser = await User.findOneAndUpdate(
-            { email: email.toLowerCase() },
-            { 
-                fullName,
-                email: email.toLowerCase(),
-                password,
-                otp: null,
-                otpExpires: null
-            },
-            { new: true, upsert: true }
-        );
+        // Create new user
+        const newUser = new User({ FullName, email, password });
+        await newUser.save();
 
-        const token = await User.matchPassword(email, password);
-
-        res.cookie("token", token, { 
-            httpOnly: true, 
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000 
-        });
-
-        res.json({ success: true });
-
-    } catch (error) {
-        console.error(error);
-        res.json({ success: false, message: "Verification failed" });
+        res.send(`
+            <h2>✅ Account Created Successfully!</h2>
+            <p>Welcome, <strong>${fullName}</strong></p>
+            <br>
+            <a href="/login">Go to Login →</a>
+        `);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Server Error");
     }
 });
 
