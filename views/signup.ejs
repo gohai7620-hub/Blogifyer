@@ -53,6 +53,13 @@
       font-weight: 500;
       flex-shrink: 0;
     }
+    #message {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
     @media (max-width: 576px) {
       .signup-card { padding: 1.4rem; }
       .otp-box { width: 38px; height: 46px; font-size: 1.1rem; }
@@ -64,7 +71,9 @@
   <div class="signup-card">
     <h2 class="text-center mb-4">Create Account</h2>
     
-    <form id="signupForm" action="/signup" method="POST">
+    <div id="message" style="display: none;"></div>
+
+    <form id="signupForm">
       <div class="mb-3">
         <label class="form-label">Full Name</label>
         <input type="text" class="form-control" name="FullName" placeholder="John Doe" required>
@@ -96,7 +105,7 @@
         <input type="hidden" name="otp" id="hiddenOtp">
       </div>
 
-      <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5">Create Account</button>
+      <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5" id="submitBtn">Create Account</button>
     </form>
 
     <p class="text-center mt-3 mb-0">
@@ -117,11 +126,18 @@
       }
     }
 
+    function showMessage(text, type = 'danger') {
+      const msgDiv = document.getElementById('message');
+      msgDiv.textContent = text;
+      msgDiv.style.display = 'block';
+      msgDiv.className = `alert alert-${type}`;
+    }
+
     // Send OTP
     document.getElementById('sendOtpBtn').addEventListener('click', async function() {
       const email = document.getElementById('email').value.trim();
       if (!email) {
-        alert("Please enter your email first!");
+        showMessage("Please enter your email first!", "warning");
         document.getElementById('email').focus();
         return;
       }
@@ -139,20 +155,57 @@
         const data = await res.json();
 
         if (data.success) {
-          alert(`✅ OTP sent to ${email}`);
+          showMessage(`✅ OTP sent to ${email}`, "success");
           this.textContent = "Resend OTP";
           setTimeout(() => {
             this.disabled = false;
           }, 30000);
         } else {
-          alert(data.message);
+          showMessage(data.message, "danger");
           this.disabled = false;
           this.textContent = "Send OTP";
         }
       } catch (err) {
-        alert("Failed to send OTP. Try again.");
+        showMessage("Failed to send OTP. Try again.", "danger");
         this.disabled = false;
         this.textContent = "Send OTP";
+      }
+    });
+
+    // Signup Form Submission
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Creating Account...";
+
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch('/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          showMessage("🎉 Account created successfully! Redirecting...", "success");
+          setTimeout(() => {
+            window.location.href = "/"; // Redirect to home
+          }, 1500);
+        } else {
+          showMessage(result.message, "danger");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Create Account";
+        }
+      } catch (err) {
+        showMessage("Something went wrong. Please try again.", "danger");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Create Account";
       }
     });
 
