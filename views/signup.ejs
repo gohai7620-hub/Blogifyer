@@ -1,292 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Blogify</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .signup-container {
-            background: white;
-            padding: 40px 30px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 420px;
-        }
-
-        h2 {
-            text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 24px;
-            font-size: 28px;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 16px;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin: 10px 0;
-        }
-
-        button:hover { background: #5568d3; }
-
-        .google-btn {
-            width: 100%;
-            padding: 14px;
-            background: white;
-            color: #333;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .divider {
-            text-align: center;
-            margin: 24px 0;
-            color: #9ca3af;
-            position: relative;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0; right: 0;
-            height: 1px;
-            background: #e5e7eb;
-        }
-
-        .divider span { background: white; padding: 0 15px; }
-
-        .error { color: #ef4444; background: #fee2e2; padding: 12px; border-radius: 8px; text-align: center; margin: 10px 0; }
-        .success { color: #10b981; background: #d1fae5; padding: 12px; border-radius: 8px; text-align: center; margin: 10px 0; }
-
-        .otp-section {
-            margin-top: 15px;
-            padding: 15px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            background: #f8fafc;
-        }
-
-        .otp-inputs {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin: 12px 0;
-        }
-
-        .otp-digit {
-            width: 48px;
-            height: 55px;
-            text-align: center;
-            font-size: 26px;
-            font-weight: bold;
-            border: 2px solid #cbd5e1;
-            border-radius: 10px;
-        }
-
-        .otp-digit:focus {
-            border-color: #667eea;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+    .signup-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 420px;
+      width: 100%;
+      padding: 1.8rem;
+    }
+    .otp-section {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .otp-container {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+    }
+    .otp-box {
+      width: 42px;
+      height: 50px;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+    }
+    .otp-box:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    }
+    .send-otp-btn {
+      height: 50px;
+      padding: 0 16px;
+      white-space: nowrap;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    @media (max-width: 576px) {
+      .signup-card { padding: 1.4rem; }
+      .otp-box { width: 38px; height: 46px; font-size: 1.1rem; }
+      .send-otp-btn { height: 46px; padding: 0 12px; font-size: 0.85rem; }
+    }
+  </style>
 </head>
 <body>
+  <div class="signup-card">
+    <h2 class="text-center mb-4">Create Account</h2>
+    
+    <form id="signupForm" action="/signup" method="POST">
+      <div class="mb-3">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-control" name="fullName" placeholder="John Doe" required>
+      </div>
 
-    <div class="signup-container">
-        <h2>Create Account</h2>
+      <div class="mb-3">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required>
+      </div>
 
-        <form id="signupForm">
-            <div class="form-group">
-                <label for="fullName">Full Name</label>
-                <input type="text" id="fullName" required placeholder="Enter your full name">
-            </div>
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" required placeholder="Enter your email">
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required placeholder="Create password">
-            </div>
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" required placeholder="Confirm password">
-            </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" placeholder="••••••••" required>
+      </div>
 
-            <!-- Send OTP Button -->
-            <button type="button" onclick="sendOTP()">Send OTP</button>
+      <div class="mb-4">
+        <label class="form-label">Verification Code</label>
+        <div class="otp-section">
+          <div class="otp-container" id="otpContainer">
+            <input type="text" class="otp-box" maxlength="1" data-index="0" oninput="moveToNext(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+            <input type="text" class="otp-box" maxlength="1" data-index="1" oninput="moveToNext(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+            <input type="text" class="otp-box" maxlength="1" data-index="2" oninput="moveToNext(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+            <input type="text" class="otp-box" maxlength="1" data-index="3" oninput="moveToNext(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+            <input type="text" class="otp-box" maxlength="1" data-index="4" oninput="moveToNext(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+            <input type="text" class="otp-box" maxlength="1" data-index="5" oninput="moveToNext(this)" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+          </div>
+          <button type="button" class="btn btn-primary send-otp-btn" id="sendOtpBtn">Send OTP</button>
+        </div>
+        <input type="hidden" name="otp" id="hiddenOtp">
+      </div>
 
-            <!-- OTP Input -->
-            <div class="otp-section">
-                <label style="text-align:center; display:block; margin-bottom:8px;">Enter 6 Digit OTP</label>
-                <div class="otp-inputs">
-                    <input type="text" maxlength="1" class="otp-digit" data-index="0" autofocus>
-                    <input type="text" maxlength="1" class="otp-digit" data-index="1">
-                    <input type="text" maxlength="1" class="otp-digit" data-index="2">
-                    <input type="text" maxlength="1" class="otp-digit" data-index="3">
-                    <input type="text" maxlength="1" class="otp-digit" data-index="4">
-                    <input type="text" maxlength="1" class="otp-digit" data-index="5">
-                </div>
-                <button type="button" onclick="createAccount()">Create Account</button>
-            </div>
+      <button type="submit" class="btn btn-success w-100 py-3 fw-bold fs-5">Create Account</button>
+    </form>
 
-            <div id="message"></div>
-        </form>
+    <p class="text-center mt-3 mb-0">
+      Already have an account? <a href="/login">Login</a>
+    </p>
+  </div>
 
-        <div class="divider"><span>OR</span></div>
+  <script>
+    function moveToNext(current) {
+      const index = parseInt(current.dataset.index);
+      const boxes = document.querySelectorAll('.otp-box');
+      let otpValue = '';
+      boxes.forEach(box => otpValue += box.value);
+      document.getElementById('hiddenOtp').value = otpValue;
 
-        <a href="/user/auth/google" class="google-btn">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
-                 alt="Google" width="20" height="20">
-            Sign up with Google
-        </a>
-    </div>
+      if (current.value.length === 1 && index < 5) {
+        boxes[index + 1].focus();
+      }
+    }
 
-    <script>
-        const otpInputs = document.querySelectorAll('.otp-digit');
-        const messageDiv = document.getElementById('message');
-        let currentEmail = "";
+    // Send OTP
+    document.getElementById('sendOtpBtn').addEventListener('click', async function() {
+      const email = document.getElementById('email').value.trim();
+      if (!email) {
+        alert("Please enter your email first!");
+        document.getElementById('email').focus();
+        return;
+      }
 
-        // OTP Auto Focus
-        otpInputs.forEach((input, index) => {
-            input.addEventListener('input', () => {
-                input.value = input.value.replace(/[^0-9]/g, '');
-                if (input.value.length === 1 && index < 5) {
-                    otpInputs[index + 1].focus();
-                }
-            });
+      this.disabled = true;
+      this.textContent = "Sending...";
+
+      try {
+        const res = await fetch('/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
         });
 
-        async function sendOTP() {
-            messageDiv.textContent = '';
-            const email = document.getElementById('email').value.trim();
+        const data = await res.json();
 
-            if (!email) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = "Please enter your email";
-                return;
-            }
-
-            try {
-                const res = await fetch('/send-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    currentEmail = email;
-                    messageDiv.className = 'success';
-                    messageDiv.textContent = `✅ OTP sent to ${email}`;
-                } else {
-                    messageDiv.className = 'error';
-                    messageDiv.textContent = data.message || "Failed to send OTP";
-                }
-            } catch (err) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = "Failed to send OTP";
-            }
+        if (data.success) {
+          alert(`✅ OTP sent to ${email}`);
+          this.textContent = "Resend OTP";
+          setTimeout(() => {
+            this.disabled = false;
+          }, 30000);
+        } else {
+          alert(data.message);
+          this.disabled = false;
+          this.textContent = "Send OTP";
         }
+      } catch (err) {
+        alert("Failed to send OTP. Try again.");
+        this.disabled = false;
+        this.textContent = "Send OTP";
+      }
+    });
 
-        async function createAccount() {
-            const otp = Array.from(otpInputs).map(i => i.value).join('');
-            const fullName = document.getElementById('fullName').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-
-            if (otp.length !== 6) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = "Please enter all 6 OTP digits";
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = "Passwords do not match";
-                return;
-            }
-
-            try {
-                const res = await fetch('/verify-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        email: currentEmail || email, 
-                        otp, 
-                        fullName, 
-                        password 
-                    })
-                });
-
-                const data = await res.json();
-
-                if (data.success) {
-                    messageDiv.className = 'success';
-                    messageDiv.textContent = "✅ Account created successfully!";
-                    setTimeout(() => window.location.href = "/", 1500);
-                } else {
-                    messageDiv.className = 'error';
-                    messageDiv.textContent = data.message || "Invalid OTP";
-                }
-            } catch (err) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = "Verification failed";
-            }
-        }
-    </script>
+    // Paste OTP support
+    document.getElementById('otpContainer').addEventListener('paste', function(e) {
+      const pasteData = e.clipboardData.getData('text').trim();
+      if (pasteData.length === 6 && /^\d{6}$/.test(pasteData)) {
+        const boxes = document.querySelectorAll('.otp-box');
+        pasteData.split('').forEach((digit, i) => boxes[i].value = digit);
+        document.getElementById('hiddenOtp').value = pasteData;
+        boxes[5].focus();
+      }
+    });
+  </script>
 </body>
 </html>
