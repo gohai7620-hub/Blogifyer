@@ -7,17 +7,15 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
     },
-    tls: {
-        rejectUnauthorized: false // Helps with some Gmail connection issues
-    }
+    tls: { rejectUnauthorized: false }
 });
 
-// Test transporter connection on startup
-transporter.verify((error, success) => {
+// Test connection when server starts
+transporter.verify((error) => {
     if (error) {
-        console.error("❌ Email Transporter Error:", error.message);
+        console.error("❌ EMAIL TRANSPORTER FAILED TO CONNECT:", error.message);
     } else {
-        console.log("✅ Email Transporter is Ready");
+        console.log("✅ Email Transporter Connected Successfully");
     }
 });
 
@@ -25,28 +23,24 @@ const sendOTPEmail = async (email, otp) => {
     const mailOptions = {
         from: `"Blogify" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: 'Your Signup Verification Code - Blogify',
+        subject: 'Your Signup OTP - Blogify',
         html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
-                <h2 style="color: #4CAF50; text-align: center;">Verify Your Email Address</h2>
-                <h1 style="text-align: center; letter-spacing: 10px; font-size: 48px; color: #333; margin: 20px 0;">${otp}</h1>
-                <p style="text-align: center; color: #555; font-size: 16px;">This code will expire in 5 minutes.</p>
-                <p style="text-align: center; color: #999; font-size: 14px;">If you didn't request this OTP, please ignore this email.</p>
-            </div>
+            <h2>Your Verification Code</h2>
+            <h1 style="font-size:48px; letter-spacing:8px;">${otp}</h1>
+            <p>This code expires in 5 minutes.</p>
         `
     };
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ OTP Email Sent Successfully to: ${email}`);
-        console.log(`Message ID: ${info.messageId}`);
+        console.log(`✅ OTP SENT SUCCESSFULLY to ${email} | MessageId: ${info.messageId}`);
         return true;
     } catch (error) {
-        console.error("❌ Nodemailer Send Error:");
-        console.error("Error Code:", error.code);
-        console.error("Error Message:", error.message);
+        console.error("❌ EMAIL SENDING FAILED:");
+        console.error("Code:", error.code);
+        console.error("Message:", error.message);
         console.error("Full Error:", error);
-        throw error; // Let the route handle the error
+        throw error;
     }
 };
 
