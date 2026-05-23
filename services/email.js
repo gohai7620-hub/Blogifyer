@@ -2,50 +2,37 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.BREVO_HOST,
+    port: process.env.BREVO_PORT,
+    secure: false,
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    },
-    tls: {
-        rejectUnauthorized: false
+        user: process.env.BREVO_USER,
+        pass: process.env.BREVO_PASS
     }
 });
 
-// Verify connection on startup
 transporter.verify((error) => {
-    if (error) {
-        console.error("❌ EMAIL TRANSPORTER CONNECTION FAILED:", error.message);
-    } else {
-        console.log("✅ Email Transporter is Ready to Send Emails");
-    }
+    if (error) console.error("❌ Brevo Connection Error:", error.message);
+    else console.log("✅ Brevo Email Service Ready");
 });
 
 const sendOTPEmail = async (email, otp) => {
     const mailOptions = {
-        from: `"Blogify" <${process.env.EMAIL_USER}>`,
+        from: `"Blogify" <${process.env.BREVO_USER}>`,
         to: email,
-        subject: 'Your Signup Verification Code - Blogify',
+        subject: 'Your Signup OTP Code',
         html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #ddd; border-radius: 10px;">
-                <h2 style="color: #4CAF50; text-align: center;">Verify Your Email</h2>
-                <h1 style="text-align: center; letter-spacing: 12px; font-size: 52px; color: #333;">${otp}</h1>
-                <p style="text-align: center; color: #666; font-size: 16px;">This code will expire in 5 minutes.</p>
-                <p style="text-align: center; color: #999;">If you didn't request this, ignore this email.</p>
-            </div>
+            <h2>Your Verification Code</h2>
+            <h1 style="font-size: 48px;">${otp}</h1>
+            <p>This code expires in 5 minutes.</p>
         `
     };
 
     try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`✅ OTP EMAIL SENT SUCCESSFULLY to ${email}`);
-        console.log(`Message ID: ${info.messageId}`);
-        return true;
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ OTP Sent to ${email}`);
     } catch (error) {
-        console.error("❌ FAILED TO SEND EMAIL:");
-        console.error("Error Code:", error.code);
-        console.error("Error Message:", error.message);
-        if (error.response) console.error("Response:", error.response);
+        console.error("❌ Brevo Send Error:", error.message);
         throw error;
     }
 };
