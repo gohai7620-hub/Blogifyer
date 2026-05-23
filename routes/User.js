@@ -5,24 +5,26 @@ const { sendOTPEmail } = require('../services/email');
 
 const otpStore = new Map();
 
-// ====================== SIGNIN (UNTOUCHED) ======================
+// ====================== SIGNIN ======================
 router.post('/signin', async (req, res) => {
     const { email, password } = req.body;
     try {
         const token = await User.matchPassword(email, password);
+        
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
+        
         res.status(200).json({ success: true, message: "Login successful" });
     } catch (error) {
         res.status(401).json({ success: false, message: error.message || "Invalid credentials" });
     }
 });
 
-// ====================== LOGOUT (UNTOUCHED) ======================
+// ====================== LOGOUT ======================
 router.get('/logout', (req, res) => {
     res.clearCookie("token");
     res.redirect('/');
@@ -42,6 +44,8 @@ router.get('/signup', (req, res) => {
 router.post('/send-otp', async (req, res) => {
     const { email } = req.body;
 
+    console.log("📧 [Send OTP] Request received for:", email);
+
     if (!email) {
         return res.status(400).json({ success: false, message: 'Email is required' });
     }
@@ -49,6 +53,7 @@ router.post('/send-otp', async (req, res) => {
     try {
         const normalizedEmail = email.toLowerCase().trim();
 
+        // Check if user already exists
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(409).json({
@@ -62,11 +67,11 @@ router.post('/send-otp', async (req, res) => {
 
         otpStore.set(normalizedEmail, { otp, expires });
 
-        await sendOTPEmail(email, otp);
+        await sendOTPEmail(normalizedEmail, otp);
 
         res.json({ success: true, message: 'OTP sent successfully' });
     } catch (error) {
-        console.error("Send OTP Error:", error.message);
+        console.error("🚨 [Send OTP] Full Error:", error);
         res.status(500).json({ 
             success: false, 
             message: 'Failed to send OTP. Please check server console.' 
@@ -74,9 +79,9 @@ router.post('/send-otp', async (req, res) => {
     }
 });
 
-// ====================== SIGNUP (Fixed) ======================
+// ====================== SIGNUP ======================
 router.post('/signup', async (req, res) => {
-    const { fullName, email, password, otp } = req.body;   // Fixed destructuring
+    const { fullName, email, password, otp } = req.body;
 
     if (!fullName || !email || !password || !otp) {
         return res.status(400).json({ success: false, message: "All fields are required" });
