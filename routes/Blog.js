@@ -2,33 +2,52 @@ const express = require("express");
 const router = express.Router();
 const Blog = require("../models/Blog");
 const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
+const { blogCreationLimiter } = require("../middlewares/rateLimiting");
 const cloudinaryUpload = require("../middlewares/CloudinaryUploads");
+const { validateBlog, sanitizeInput } = require("../middlewares/validation");
+const AnalyticsService = require("../services/analyticsService");
+const NotificationService = require("../services/notificationService");
 
 // Protect all routes
 router.use(restrictToLoggedInUserOnly);
 
-// GET - Add New Blog Form
+// ====================== GET - Add New Blog Form ======================
 router.get("/add-new", (req, res) => {
     res.render("addBlog", { user: req.user, error: null });
 });
 
-// POST - Create Blog
-router.post("/add-new", cloudinaryUpload.single("coverImage"), async (req, res) => {
+// ====================== POST - Create Blog ======================
+router.post("/add-new", blogCreationLimiter, cloudinaryUpload.single("coverImage"), async (req, res) => {
     try {
-        const { title, body } = req.body;
+        const { title, body, tags, category, status, metaDescription, excerpt } = req.body;
 
-        if (!title || !body) {
+        // Validate
+        const validation = validateBlog(title, body, tags ? tags.split(",") : []);
+        if (!validation.isValid) {
             return res.render("addBlog", { 
                 user: req.user, 
-                error: "Title and Body are required!" 
+                error: validation.errors.join(", ") 
             });
         }
 
+        const tagsArray = tags ? tags.split(",").map(t => t.trim()).filter(t => t) : [];
+
         const newBlog = await Blog.create({
-            title,
-            body,
+            title: sanitizeInput(title),
+            body: sanitizeInput(body),
             coverImageURL: req.file ? req.file.path : null,
+            tags: tagsArray,
+            category: category || "General",
+            status: status || "published",
+            metaDescription: sanitizeInput(metaDescription),
+            excerpt: sanitizeInput(excerpt),
             createdBy: req.user._id
+        });
+
+        // Create analytics record
+        await require("../models/BlogAnalytics").create({
+            blog: newBlog._id,
+            author: req.user._id
         });
 
         res.redirect(`/blogs/${newBlog._id}`);
@@ -41,23 +60,98 @@ router.post("/add-new", cloudinaryUpload.single("coverImage"), async (req, res) 
     }
 });
 
-// GET Single Blog
+// ====================== GET - Single Blog ======================
 router.get("/:id", async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id)
-            .populate("createdBy", "fullName profileImageURL")
+            .notDeleted()
+            .populate("createdBy", "fullName profileImageURL followers")
             .lean();
 
         if (!blog) return res.status(404).send("Blog not found");
 
-        res.render("view", { user: req.user, blog });   // Changed from "blog" to "view" as per your code
+        // Track view
+        await AnalyticsService.trackView(blog._id, req.user?._id, "direct");
+
+        // Get related blogs
+        const relatedBlogs = await Blog.find({
+            tags: { $in: blog.tags },
+            _id: { $ne: blog._id },
+            isDeleted: false,
+            status: "published"
+        })
+            .limit(3)
+            .lean();
+
+        // Get author's other blogs
+        const authorBlogs = await Blog.find({
+            createdBy: blog.createdBy._id,
+            _id: { $ne: blog._id },
+            isDeleted: false,
+            status: "published"
+        })
+            .limit(3)
+            .lean();
+
+        // Check if user likes this blog
+        const hasLiked = blog.likes.includes(req.user?._id);
+
+        res.render("view", { 
+            user: req.user, 
+            blog,
+            relatedBlogs,
+            authorBlogs,
+            hasLiked
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send("Internal Server Error");
     }
 });
 
-// DELETE Blog - Only owner can delete
+// ====================== PUT - Update Blog ======================
+router.put("/:id", cloudinaryUpload.single("coverImage"), async (req, res) => {
+    try {
+        const { title, body, tags, category, status, metaDescription, excerpt } = req.body;
+
+        const blog = await Blog.findById(req.params.id);
+        if (!blog) {
+            return res.status(404).json({ success: false, message: "Blog not found" });
+        }
+
+        // Check ownership
+        if (blog.createdBy.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: "Not authorized" });
+        }
+
+        // Validate
+        const validation = validateBlog(title, body, tags ? tags.split(",") : []);
+        if (!validation.isValid) {
+            return res.status(400).json({ success: false, errors: validation.errors });
+        }
+
+        // Update fields
+        blog.title = sanitizeInput(title);
+        blog.body = sanitizeInput(body);
+        blog.tags = tags ? tags.split(",").map(t => t.trim()).filter(t => t) : [];
+        blog.category = category || "General";
+        blog.status = status || "published";
+        blog.metaDescription = sanitizeInput(metaDescription);
+        blog.excerpt = sanitizeInput(excerpt);
+        if (req.file) {
+            blog.coverImageURL = req.file.path;
+        }
+
+        await blog.save();
+
+        res.json({ success: true, blog });
+    } catch (error) {
+        console.error("Update Blog Error:", error);
+        res.status(500).json({ success: false, message: "Failed to update blog" });
+    }
+});
+
+// ====================== DELETE Blog ======================
 router.delete("/:id", async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
@@ -66,17 +160,121 @@ router.delete("/:id", async (req, res) => {
             return res.status(404).json({ success: false, message: "Blog not found" });
         }
 
-        // Check if user is the owner
-        if (String(blog.createdBy) !== String(req.user._id)) {
-            return res.status(403).json({ success: false, message: "You can only delete your own blogs" });
+        // Check ownership
+        if (blog.createdBy.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: "Not authorized" });
         }
 
-        await Blog.findByIdAndDelete(req.params.id);
+        // Soft delete
+        blog.isDeleted = true;
+        blog.deletedAt = new Date();
+        await blog.save();
 
         res.json({ success: true, message: "Blog deleted successfully" });
     } catch (error) {
         console.error("Delete Blog Error:", error);
         res.status(500).json({ success: false, message: "Failed to delete blog" });
+    }
+});
+
+// ====================== LIKE BLOG ======================
+router.post("/:id/like", async (req, res) => {
+    try {
+        const blog = await Blog.findById(req.params.id);
+
+        if (!blog) {
+            return res.status(404).json({ success: false, message: "Blog not found" });
+        }
+
+        const hasLiked = blog.likes.includes(req.user._id);
+
+        if (hasLiked) {
+            blog.likes = blog.likes.filter(id => id.toString() !== req.user._id.toString());
+        } else {
+            blog.likes.push(req.user._id);
+
+            // Send notification to author
+            if (blog.createdBy.toString() !== req.user._id.toString()) {
+                await NotificationService.createNotification(
+                    blog.createdBy,
+                    "like",
+                    {
+                        title: "New like",
+                        message: `${req.user.fullName} liked your blog`,
+                        blog: blog._id,
+                        actor: req.user._id
+                    }
+                );
+            }
+        }
+
+        await blog.save();
+
+        res.json({ 
+            success: true, 
+            liked: !hasLiked,
+            likeCount: blog.likes.length 
+        });
+    } catch (error) {
+        console.error("Like Blog Error:", error);
+        res.status(500).json({ success: false, message: "Failed to like blog" });
+    }
+});
+
+// ====================== GET FEATURED BLOGS ======================
+router.get("/featured/list", async (req, res) => {
+    try {
+        const blogs = await Blog.find({ 
+            isFeatured: true, 
+            status: "published",
+            isDeleted: false 
+        })
+            .sort({ featuredRank: 1, createdAt: -1 })
+            .populate("createdBy", "fullName profileImageURL")
+            .lean();
+
+        res.json({ success: true, blogs });
+    } catch (error) {
+        console.error("Error fetching featured blogs:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch featured blogs" });
+    }
+});
+
+// ====================== SEARCH BY TAG ======================
+router.get("/tags/:tag", async (req, res) => {
+    try {
+        const { tag } = req.params;
+        const { page = 1 } = req.query;
+        const limit = 9;
+        const skip = (page - 1) * limit;
+
+        const blogs = await Blog.find({
+            tags: tag,
+            status: "published",
+            isDeleted: false
+        })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("createdBy", "fullName profileImageURL")
+            .lean();
+
+        const total = await Blog.countDocuments({
+            tags: tag,
+            status: "published",
+            isDeleted: false
+        });
+
+        res.render("taggedBlogs", {
+            user: req.user,
+            blogs,
+            tag,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(total / limit)
+        });
+    } catch (error) {
+        console.error("Error fetching tagged blogs:", error);
+        res.status(500).send("Internal Server Error");
     }
 });
 
