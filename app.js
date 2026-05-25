@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
+const { graphqlHTTP } = require("express-graphql");
 
 const UserRoute = require("./routes/User");
 const GoogleAuthRoute = require("./routes/GoogleAuthentication");
@@ -12,6 +13,7 @@ const ProfileRoute = require("./routes/Profile");
 
 const { checkForAuthenticationCookie } = require("./middlewares/authentication");
 const { queryHandler } = require("./middlewares/queryParams");
+const { schema, root } = require("./graphql/schema");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -38,6 +40,14 @@ app.use(express.static(path.resolve("./public")));
 app.use(passport.initialize());
 app.use(checkForAuthenticationCookie("token"));
 app.use(queryHandler);   // ← Must be here
+
+// ====================== GRAPHQL ENDPOINT ======================
+app.use("/graphql", graphqlHTTP((req) => ({
+    schema: schema,
+    rootValue: root,
+    graphiql: true,
+    context: { user: req.user }
+})));
 
 // ====================== HOME ROUTE ======================
 app.get("/", async (req, res) => {
