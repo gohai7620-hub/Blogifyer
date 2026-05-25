@@ -5,6 +5,11 @@ const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const { graphqlHTTP } = require("express-graphql");
 
+// Markdown and Syntax Highlighting Packages
+const { Marked } = require("marked");
+const { markedHighlight } = require("marked-highlight");
+const hljs = require("highlight.js");
+
 const UserRoute = require("./routes/User");
 const GoogleAuthRoute = require("./routes/GoogleAuthentication");
 const BlogRoute = require("./routes/Blog");
@@ -24,6 +29,18 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 require("dotenv").config();
+
+// Initialize the Markdown parser with Code Highlighting support
+const marked = new Marked(
+    markedHighlight({
+        emptyLangClass: 'hljs',
+        langPrefix: 'hljs language-',
+        highlight(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+            return hljs.highlight(code, { language }).value;
+        }
+    })
+);
 
 // ====================== MONGODB CONNECTION ======================
 mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/blogify")
@@ -70,6 +87,30 @@ app.locals.formatDate = function(date) {
         month: 'short',
         day: 'numeric'
     });
+};
+
+/**
+ * Custom helper to clean system string debris and convert 
+ * markdown bodies into structurally sound HTML text + beautiful code snippets.
+ */
+app.locals.renderMarkdown = function(rawContent) {
+    if (!rawContent) return '';
+    
+    // Clean up structural debris strings seen in your database (e.g. /ppbr/pp, /pp, etc.)
+    let cleanedContent = String(rawContent)
+        .replace(/\/ppbr\/pp/g, '\n\n')
+        .replace(/\/ppbr\/ph2/g, '\n\n## ')
+        .replace(/\/ppbr\/ph/g, '\n\n# ')
+        .replace(/\/pp/g, '\n')
+        .replace(/\/h2pbr\/pp/g, '\n## ')
+        .replace(/\/strongpbr\/ph2/g, '\n\n## ')
+        .replace(/\/li\/ul/g, '')
+        .replace(/\/li/g, '\n* ')
+        .replace(/pbr\/pul/g, '\n\n')
+        .replace(/pbr\/p/g, '\n');
+
+    // Return compiled HTML content with embedded snippet structural tags
+    return marked.parse(cleanedContent);
 };
 // ============================================================
 
@@ -162,7 +203,7 @@ app.use((req, res) => {
 // ====================== ERROR HANDLER ======================
 app.use((err, req, res, next) => {
     console.error("🚨 Server Error:", err);
-    res.status(500).send("Internal Server Error"); // Temporary fix until error.ejs is created
+    res.status(500).send("Internal Server Error");
 });
 
 app.listen(PORT, () => {
