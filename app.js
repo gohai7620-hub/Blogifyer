@@ -55,6 +55,24 @@ app.use(checkForAuthenticationCookie("token"));
 app.use(queryHandler);
 app.use("/api/", apiLimiter);
 
+// ====================== GLOBAL EJS HELPERS ======================
+app.locals.truncate = function(text, length = 60) {
+    if (!text) return '';
+    text = String(text);
+    if (text.length <= length) return text;
+    return text.substring(0, length).trim() + '...';
+};
+
+app.locals.formatDate = function(date) {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+};
+// ============================================================
+
 // ====================== GRAPHQL ENDPOINT ======================
 app.use("/graphql", graphqlHTTP((req) => ({
     schema: schema,
@@ -98,7 +116,6 @@ app.get("/", async (req, res) => {
         const totalBlogs = await Blog.countDocuments(filter);
         const totalPages = Math.ceil(totalBlogs / limit);
 
-        // Get featured blogs
         const featuredBlogs = await Blog.find({
             isFeatured: true,
             status: "published",
@@ -122,7 +139,7 @@ app.get("/", async (req, res) => {
         });
     } catch (error) {
         console.error("🚨 Home Route Error:", error.message);
-        res.status(500).render("error", { error: error.message });
+        res.status(500).send("Internal Server Error");
     }
 });
 
@@ -145,7 +162,7 @@ app.use((req, res) => {
 // ====================== ERROR HANDLER ======================
 app.use((err, req, res, next) => {
     console.error("🚨 Server Error:", err);
-    res.status(err.status || 500).render("error", { error: err });
+    res.status(500).send("Internal Server Error"); // Temporary fix until error.ejs is created
 });
 
 app.listen(PORT, () => {
