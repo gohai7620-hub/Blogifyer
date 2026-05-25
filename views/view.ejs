@@ -31,30 +31,36 @@
             border-radius: 8px;
         }
         
-        /* Styled container for the generated code block segments */
+        /* Layout formatting for code container blocks */
         .blog-content pre {
-            background-color: #282c34 !important;
+            background-color: #282c34 !important; /* Forces rich code-box dark tint */
             padding: 1.25rem;
             border-radius: 10px;
             overflow-x: auto;
             margin: 1.8rem 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+            border: 1px solid #3e4451;
         }
-        .blog-content code {
-            font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace !important;
+        
+        /* Enforces high-contrast text rendering inside dark snippets */
+        .blog-content pre code {
+            font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', monospace !important;
             font-size: 0.95rem;
-            padding: 0.1rem 0.3rem;
+            background-color: transparent !important;
+            color: #abb2bf !important; /* Fallback crisp light gray text color */
+            padding: 0;
+            display: block;
+            line-height: 1.5;
         }
-        /* Keep inline single-word code highlights crisp */
+
+        /* Inline single-word highlights (e.g. `const path`) */
         .blog-content p code {
             background-color: #f1f3f5;
             color: #d63384;
             border-radius: 4px;
-        }
-        .blog-content pre code {
-            background-color: transparent !important;
-            color: inherit;
-            padding: 0;
+            padding: 0.2rem 0.4rem;
+            font-family: monospace;
+            font-size: 0.9em;
         }
 
         .sidebar-widget {
