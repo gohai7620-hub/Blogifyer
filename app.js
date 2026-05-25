@@ -5,7 +5,7 @@ const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const { graphqlHTTP } = require("express-graphql");
 
-// Markdown and Syntax Highlighting Packages
+// Markdown Parsing and Visual Highlighting Extensions
 const { Marked } = require("marked");
 const { markedHighlight } = require("marked-highlight");
 const hljs = require("highlight.js");
@@ -30,7 +30,7 @@ const PORT = process.env.PORT || 8000;
 
 require("dotenv").config();
 
-// Initialize the Markdown parser with Code Highlighting support
+// Initialize Marked Parser configured to pass text directly to Highlight.js
 const marked = new Marked(
     markedHighlight({
         emptyLangClass: 'hljs',
@@ -90,14 +90,15 @@ app.locals.formatDate = function(date) {
 };
 
 /**
- * Custom helper to clean system string debris and convert 
- * markdown bodies into structurally sound HTML text + beautiful code snippets.
+ * Global Helper Engine
+ * Clears database formatting flags, stabilizes code block segments, 
+ * escapes raw symbols safely, and returns syntactically styled HTML strings.
  */
 app.locals.renderMarkdown = function(rawContent) {
     if (!rawContent) return '';
     
-    // Clean up structural debris strings seen in your database (e.g. /ppbr/pp, /pp, etc.)
-    let cleanedContent = String(rawContent)
+    // 1. Clean systemic debris characters present across text entries
+    let sanitized = String(rawContent)
         .replace(/\/ppbr\/pp/g, '\n\n')
         .replace(/\/ppbr\/ph2/g, '\n\n## ')
         .replace(/\/ppbr\/ph/g, '\n\n# ')
@@ -107,10 +108,22 @@ app.locals.renderMarkdown = function(rawContent) {
         .replace(/\/li\/ul/g, '')
         .replace(/\/li/g, '\n* ')
         .replace(/pbr\/pul/g, '\n\n')
-        .replace(/pbr\/p/g, '\n');
+        .replace(/pbr\/p/g, '\n')
+        .replace(/\/strong/g, '**')
+        .replace(/strong/g, '**');
 
-    // Return compiled HTML content with embedded snippet structural tags
-    return marked.parse(cleanedContent);
+    // 2. Escape raw HTML elements embedded exclusively inside markdown backticks 
+    // This stops the browser from interpreting structural text strings as functional layouts
+    sanitized = sanitized.replace(/```([\s\S]*?)```/g, (match, codeSnippet) => {
+        const escapedSnippet = codeSnippet
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        return '```' + escapedSnippet + '```';
+    });
+
+    // 3. Compile processed markdown structures into finished template text HTML
+    return marked.parse(sanitized);
 };
 // ============================================================
 
