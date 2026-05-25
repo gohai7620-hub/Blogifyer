@@ -2,148 +2,66 @@
 <html lang="en">
 <head>
     <%- include("./partials/head") %>
-    <title>Home Page | Blogify</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-
-    <style>
-        body { background-color: #0b0c10 !important; color: #f1f1f1; }
-        .hero-section {
-            background: linear-gradient(135deg, #669eea 0%, #764ba2 100%);
-            color: white;
-            padding: 80px 0;
-            margin-bottom: 40px;
-            border-radius: 0 0 50px 50px;
-        }
-        .blog-card-full {
-            transition: all 0.3s ease;
-            border: 1px solid #22252a;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #1a1a1a;
-            margin-bottom: 24px;
-        }
-        .blog-card-full:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
-            border-color: #3b82f6;
-        }
-        .card-img-horizontal { height: 220px; object-fit: cover; width: 100%; }
-        .avatar-sm { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-    </style>
 </head>
 <body>
     <%- include("./partials/nave") %>
 
-    <header class="hero-section text-center">
+    <header class="hero-section text-center py-5 bg-primary-soft">
         <div class="container">
             <h1 class="display-4 fw-bold">Welcome to Blogify</h1>
-            <p class="lead opacity-75">Discover stories and ideas from amazing writers.</p>
+            <p class="lead">Discover stories and ideas from amazing writers.</p>
         </div>
     </header>
 
-    <main class="container mb-5" style="max-width: 960px;">
-        
-        <!-- Search & Filter -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <form method="GET" class="d-flex gap-2 flex-wrap align-items-end">
-                    <div style="flex: 1; min-width: 280px;">
-                        <input type="text" name="search" value="<%= search %>" 
-                               class="form-control" placeholder="Search blogs...">
-                    </div>
-                    <div>
-                        <select name="sort" class="form-select">
-                            <option value="newest" <%= sort === 'newest' || !sort ? 'selected' : '' %>>Newest First</option>
-                            <option value="oldest" <%= sort === 'oldest' ? 'selected' : '' %>>Oldest First</option>
-                            <option value="title" <%= sort === 'title' ? 'selected' : '' %>>Title A-Z</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Apply</button>
-                    <% if (search) { %>
-                        <a href="/" class="btn btn-outline-secondary">Clear</a>
-                    <% } %>
-                </form>
+    <main class="container my-5">
+        <!-- Query Parameter Filter -->
+        <form method="GET" class="row g-3 mb-5">
+            <div class="col-md-6">
+                <input type="text" name="search" value="<%= search %>" 
+                       class="form-control" placeholder="Search blogs...">
             </div>
-        </div>
-
-        <% if (search) { %>
-            <p class="mb-3 text-muted">Showing results for "<strong><%= search %></strong>" (<%= totalBlogs %> found)</p>
-        <% } %>
-
-        <% if (!blogs || blogs.length === 0) { %>
-            <div class="text-center py-5">
-                <h3 class="text-muted">No blogs found.</h3>
-                <% if (search) { %>
-                    <a href="/" class="btn btn-outline-primary mt-3">Clear Search</a>
-                <% } else { %>
-                    <a href="/blogs/add-new" class="btn btn-primary mt-3">Write First Blog</a>
-                <% } %>
+            <div class="col-md-3">
+                <select name="sort" class="form-select">
+                    <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest First</option>
+                    <option value="oldest" <%= sort === 'oldest' ? 'selected' : '' %>>Oldest First</option>
+                    <option value="title" <%= sort === 'title' ? 'selected' : '' %>>Title A-Z</option>
+                </select>
             </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+            </div>
+        </form>
+
+        <% if (blogs.length === 0) { %>
+            <h4 class="text-center text-muted">No blogs found.</h4>
         <% } else { %>
-            <% blogs.forEach(blog => { %>
-                <div class="col-12 mb-4">
-                    <div class="card blog-card-full">
-                        <div class="row g-0">
-                            <div class="col-md-4">
-                                <img src="<%= blog.coverImageURL || '/images/default-blog.png' %>" 
-                                     class="card-img-horizontal" 
-                                     onerror="this.src='/images/default-blog.png';"
-                                     alt="<%= blog.title %>">
-                            </div>
-                            <div class="col-md-8 p-4 position-relative">
-                                <div class="dropdown position-absolute top-0 end-0 m-3">
-                                    <button class="btn btn-link text-light p-1" data-bs-toggle="dropdown">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="/blogs/<%= blog._id %>">View</a></li>
-                                        <li><a class="dropdown-item" onclick="shareBlog('<%= blog._id %>')">Share</a></li>
-                                        <% if (user && blog.createdBy && String(blog.createdBy._id) === String(user._id)) { %>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" onclick="deleteBlog('<%= blog._id %>')">Delete</a></li>
-                                        <% } %>
-                                    </ul>
-                                </div>
-
-                                <div class="d-flex align-items-center mb-3">
-                                    <% if (blog.createdBy) { %>
-                                        <img src="<%= blog.createdBy.profileImageURL || '/imgs/default.png' %>" 
-                                             class="avatar-sm me-2" onerror="this.src='/imgs/default.png';">
-                                        <span><%= blog.createdBy.fullName %></span>
-                                    <% } %>
-                                    <span class="mx-2 text-muted">•</span>
-                                    <small class="time-ago" data-time="<%= blog.createdAt %>"></small>
-                                </div>
-
-                                <h3 class="fw-bold text-white mb-2"><%= blog.title %></h3>
-                                <p class="text-light opacity-75">
-                                    <%= blog.body ? blog.body.substring(0, 160) : '' %>...
+            <div class="row">
+                <% blogs.forEach(blog => { %>
+                    <div class="col-lg-6 mb-4">
+                        <div class="card blog-card h-100">
+                            <% if (blog.coverImageURL) { %>
+                                <img src="<%= blog.coverImageURL %>" class="card-img-top" style="height: 220px; object-fit: cover;">
+                            <% } %>
+                            <div class="card-body">
+                                <h5 class="card-title"><%= blog.title %></h5>
+                                <p class="card-text text-muted">
+                                    <%= blog.body ? blog.body.substring(0, 150) : '' %>...
                                 </p>
-                                <a href="/blogs/<%= blog._id %>" class="btn btn-primary btn-sm">Read Full Blog →</a>
+                                <a href="/blogs/<%= blog._id %>" class="btn btn-primary">Read More</a>
                             </div>
                         </div>
                     </div>
-                </div>
-            <% }) %>
+                <% }) %>
+            </div>
         <% } %>
 
         <!-- Pagination -->
         <% if (totalPages > 1) { %>
-        <nav class="d-flex justify-content-center mt-5">
-            <ul class="pagination">
-                <% if (currentPage > 1) { %>
-                    <li class="page-item">
-                        <a class="page-link" href="?page=<%= currentPage-1 %>&search=<%= search %>&sort=<%= sort %>">Previous</a>
-                    </li>
-                <% } %>
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
                 <% for(let i = 1; i <= totalPages; i++) { %>
                     <li class="page-item <%= currentPage === i ? 'active' : '' %>">
                         <a class="page-link" href="?page=<%= i %>&search=<%= search %>&sort=<%= sort %>"><%= i %></a>
-                    </li>
-                <% } %>
-                <% if (currentPage < totalPages) { %>
-                    <li class="page-item">
-                        <a class="page-link" href="?page=<%= currentPage+1 %>&search=<%= search %>&sort=<%= sort %>">Next</a>
                     </li>
                 <% } %>
             </ul>
@@ -152,39 +70,5 @@
     </main>
 
     <%- include("./partials/scripts") %>
-
-    <script>
-        if (new URLSearchParams(window.location.search).get('auth') === 'success') {
-            window.history.replaceState({}, document.title, "/");
-            window.location.reload();
-        }
-
-        function timeAgo(date) {
-            const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-            let interval = seconds / 31536000; if (interval > 1) return Math.floor(interval) + "y ago";
-            interval = seconds / 2592000; if (interval > 1) return Math.floor(interval) + "mo ago";
-            interval = seconds / 86400; if (interval > 1) return Math.floor(interval) + "d ago";
-            interval = seconds / 3600; if (interval > 1) return Math.floor(interval) + "h ago";
-            interval = seconds / 60; if (interval > 1) return Math.floor(interval) + "m ago";
-            return "Just now";
-        }
-
-        document.querySelectorAll('.time-ago').forEach(el => {
-            el.textContent = timeAgo(el.getAttribute('data-time'));
-        });
-
-        function deleteBlog(id) {
-            if (confirm("Delete this blog?")) {
-                fetch(`/blogs/${id}`, { method: 'DELETE' })
-                    .then(res => res.json())
-                    .then(data => { if (data.success) location.reload(); });
-            }
-        }
-
-        function shareBlog(id) {
-            navigator.clipboard.writeText(`${window.location.origin}/blogs/${id}`)
-                .then(() => alert("Link copied!"));
-        }
-    </script>
 </body>
 </html>
