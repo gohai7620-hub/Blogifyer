@@ -15,11 +15,9 @@ const { checkForAuthenticationCookie } = require("./middlewares/authentication")
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// ====================== LOAD ENVIRONMENT VARIABLES ======================
-require("dotenv").config();   // Always load first - Critical for Render
+require("dotenv").config();
 
 console.log("🔧 ENV Check - EMAIL_USER:", !!process.env.EMAIL_USER);
-console.log("🔧 ENV Check - EMAIL_PASSWORD:", process.env.EMAIL_PASSWORD ? "Loaded" : "Missing");
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -29,7 +27,7 @@ if (MONGODB_URI) {
         .catch(err => console.error("❌ MongoDB Error:", err.message));
 }
 
-// Middleware Setup
+// Middleware
 app.set("view engine", "ejs");
 app.set("views", path.resolve("./views"));
 
@@ -41,18 +39,48 @@ app.use(express.static(path.resolve("./public")));
 app.use(passport.initialize());
 app.use(checkForAuthenticationCookie("token"));
 
-// ====================== HOME ROUTE ======================
+// ====================== HOME ROUTE WITH QUERY PARAMS ======================
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
-        const allBlogs = await Blog.find({})
-            .sort({ createdAt: -1 })
+        const { search, page = 1, limit = 9, sort = "newest" } = req.query;
+
+        const filter = {};
+        let sortOption = { createdAt: -1 };
+
+        if (search) {
+            filter.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { body: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        if (sort === "oldest") sortOption = { createdAt: 1 };
+        else if (sort === "title") sortOption = { title: 1 };
+
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
+
+        const allBlogs = await Blog.find(filter)
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limitNum)
             .populate("createdBy", "fullName profileImageURL")
             .lean();
 
+        const totalBlogs = await Blog.countDocuments(filter);
+        const totalPages = Math.ceil(totalBlogs / limitNum);
+
         res.render("home", { 
             user: req.user || null,
-            blogs: allBlogs || [] 
+            blogs: allBlogs || [],
+            currentPage: pageNum,
+            totalPages,
+            totalBlogs,
+            search: search || "",
+            sort: sort,
+            limit: limitNum
         });
     } catch (error) {
         console.error("Home Route Error:", error);
@@ -60,14 +88,13 @@ app.get("/", async (req, res) => {
     }
 });
 
-// ====================== ROUTES ======================
+// Routes
 app.use("/admin", AdminRoute);
 app.use("/user/profile", ProfileRoute);
-app.use("/user", UserRoute);           // Normal signup/signin + OTP
-app.use("/user", GoogleAuthRoute);     // Google OAuth
+app.use("/user", UserRoute);
+app.use("/user", GoogleAuthRoute);
 app.use("/blogs", BlogRoute);
 
-// Start Server
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });
