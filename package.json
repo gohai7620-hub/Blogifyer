@@ -1,7 +1,7 @@
 {
   "name": "blogify",
   "version": "1.0.0",
-  "description": "Blogify - Blog website with OTP Email Verification",
+  "description": "Blogify - Blog website with OTP, GraphQL & Query Params",
   "license": "ISC",
   "author": "",
   "type": "commonjs",
@@ -10,14 +10,19 @@
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
     "ejs": "^5.0.2",
     "express": "^4.19.2",
+    "express-graphql": "^0.12.0",
+    "graphql": "^16.9.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.6.2",
+    "mongoose": "^8.6.0",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^6.9.7",
