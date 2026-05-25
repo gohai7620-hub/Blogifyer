@@ -16,10 +16,47 @@
 
     <main class="container my-5">
         
+        <!-- Query Parameter Filter -->
+        <form method="GET" class="row g-3 mb-5">
+            <div class="col-md-6">
+                <input type="text" 
+                       name="search" 
+                       value="<%= search || '' %>" 
+                       class="form-control" 
+                       placeholder="Search blogs by title or content...">
+            </div>
+            <div class="col-md-3">
+                <select name="sort" class="form-select">
+                    <option value="newest" <%= (sort === 'newest' || !sort) ? 'selected' : '' %>>Newest First</option>
+                    <option value="oldest" <%= sort === 'oldest' ? 'selected' : '' %>>Oldest First</option>
+                    <option value="title" <%= sort === 'title' ? 'selected' : '' %>>Title A-Z</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+            </div>
+            <% if (search) { %>
+                <div class="col-12 mt-2">
+                    <a href="/" class="btn btn-outline-secondary">Clear Search</a>
+                </div>
+            <% } %>
+        </form>
+
+        <% if (search) { %>
+            <p class="mb-4 text-muted">
+                Showing results for <strong>"<%= search %>"</strong> 
+                (<%= totalBlogs || 0 %> found)
+            </p>
+        <% } %>
+
         <% if (!blogs || blogs.length === 0) { %>
             <div class="text-center py-5">
-                <h4 class="text-muted">No blogs found yet.</h4>
-                <a href="/blogs/add-new" class="btn btn-primary mt-3">Write Your First Blog</a>
+                <h4 class="text-muted">No blogs found.</h4>
+                <% if (search) { %>
+                    <a href="/" class="btn btn-primary mt-3">Clear Search</a>
+                <% } else { %>
+                    <a href="/blogs/add-new" class="btn btn-primary mt-3">Write Your First Blog</a>
+                <% } %>
             </div>
         <% } else { %>
             <div class="row">
@@ -49,6 +86,22 @@
                     </div>
                 <% }) %>
             </div>
+        <% } %>
+
+        <!-- Pagination -->
+        <% if (totalPages && totalPages > 1) { %>
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                <% for(let i = 1; i <= totalPages; i++) { %>
+                    <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                        <a class="page-link" 
+                           href="?page=<%= i %>&search=<%= encodeURIComponent(search || '') %>&sort=<%= sort || 'newest' %>">
+                            <%= i %>
+                        </a>
+                    </li>
+                <% } %>
+            </ul>
+        </nav>
         <% } %>
 
     </main>
