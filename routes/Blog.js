@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Blog = require("../models/Blog");
+const User = require("../models/user");                    // ← Added
 const { restrictToLoggedInUserOnly } = require("../middlewares/authentication");
 const { blogCreationLimiter } = require("../middlewares/rateLimiting");
 const cloudinaryUpload = require("../middlewares/CloudinaryUploads");
@@ -204,7 +205,7 @@ router.delete("/:id", async (req, res) => {
     }
 });
 
-// ====================== LIKE BLOG ======================
+// ====================== LIKE BLOG (FULLY UPDATED) ======================
 router.post("/:id/like", async (req, res) => {
     try {
         const blog = await Blog.findById(req.params.id);
@@ -216,12 +217,15 @@ router.post("/:id/like", async (req, res) => {
         const hasLiked = blog.likes.includes(req.user._id);
 
         if (hasLiked) {
+            // Unlike
             blog.likes = blog.likes.filter(id => id.toString() !== req.user._id.toString());
         } else {
+            // Like
             blog.likes.push(req.user._id);
 
-            // Send notification to author
+            // Send notification to author (only if not self-like)
             if (blog.createdBy.toString() !== req.user._id.toString()) {
+                // In-app Notification
                 await NotificationService.createNotification(
                     blog.createdBy,
                     "like",
@@ -232,6 +236,15 @@ router.post("/:id/like", async (req, res) => {
                         actor: req.user._id
                     }
                 );
+
+                // Email Notification
+                const blogAuthor = await User.findById(blog.createdBy);
+                if (blogAuthor) {
+                    await NotificationService.sendEmailNotification(blogAuthor, "like", {
+                        actorName: req.user.fullName,
+                        blogTitle: blog.title
+                    });
+                }
             }
         }
 
