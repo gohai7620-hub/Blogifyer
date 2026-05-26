@@ -63,10 +63,11 @@ const UserSchema = new Schema({
     
     // Notification Settings
     notificationSettings: {
-        emailOnComment: { type: Boolean, default: true },
-        emailOnNewFollower: { type: Boolean, default: true },
-        emailDigest: { type: Boolean, default: true }
-    },
+    emailOnComment: { type: Boolean, default: true },
+    emailOnNewFollower: { type: Boolean, default: true },
+    emailOnLike: { type: Boolean, default: true },
+    emailDigest: { type: Boolean, default: true }
+},
     
 }, { timestamps: true });
 
