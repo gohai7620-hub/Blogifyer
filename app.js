@@ -143,7 +143,9 @@ app.use("/graphql", graphqlHTTP((req) => ({
 app.get("/", async (req, res) => {
     try {
         const Blog = require("./models/Blog");
-        const { search = '', sort = 'newest', page = 1, limit = 9 } = req.queryParams || {};
+        // Safe fallback to req.query if queryParams is not available
+        const queryParams = req.queryParams || req.query || {};
+        const { search = '', sort = 'newest', page = 1, limit = 9 } = queryParams;
 
         const filter = {
             isDeleted: false,
