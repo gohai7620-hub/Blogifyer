@@ -5,67 +5,173 @@
     <title>Sign In - Blogify</title>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #764ba2 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 1rem;
+        }
+
+        .auth-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
 
         .auth-card {
             background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(12px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
             overflow: hidden;
+            width: 100%;
+            max-width: 420px;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        .auth-card-body {
+            padding: 2.5rem 2rem;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .auth-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+            display: block;
+            font-size: 0.95rem;
         }
 
         .form-control {
-            border-radius: 12px;
-            padding: 14px 18px;
+            width: 100%;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
             border: 2px solid #e2e8f0;
+            font-size: 0.95rem;
+            font-weight: 500;
             transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
         }
 
         .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
             outline: none;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #5a67d8);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-weight: 600;
-            font-size: 1.05rem;
-            transition: all 0.3s ease;
+        .form-control::placeholder {
+            color: #94a3b8;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.35);
+        .input-group {
+            display: flex;
+            align-items: stretch;
         }
 
-        .google-btn {
+        .input-group .form-control {
+            border-radius: 10px 0 0 10px;
+            margin: 0;
+        }
+
+        .input-group .btn {
+            border-radius: 0 10px 10px 0;
             border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 14px;
-            font-weight: 500;
+            border-left: none;
+            background: white;
+            color: #64748b;
+            font-size: 1.1rem;
+            padding: 0.85rem 1rem;
+            min-width: 48px;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .google-btn:hover {
-            border-color: #94a3b8;
+        .input-group .btn:hover {
             background: #f8fafc;
-            transform: translateY(-1px);
+            color: #334155;
+        }
+
+        .btn-signin {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border: none;
+            border-radius: 10px;
+            padding: 0.9rem 1.5rem;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-signin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-signin:active {
+            transform: translateY(0);
+        }
+
+        .btn-signin:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .forgot-link {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .forgot-link a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-link a:hover {
+            color: #4f46e5;
         }
 
         .divider {
             display: flex;
             align-items: center;
+            margin: 1.5rem 0;
             color: #94a3b8;
-            margin: 24px 0;
         }
+
         .divider::before,
         .divider::after {
             content: '';
@@ -73,70 +179,174 @@
             height: 1px;
             background: #e2e8f0;
         }
+
         .divider span {
-            padding: 0 18px;
+            padding: 0 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.9rem 1.5rem;
+            background: white;
+            color: #1e293b;
+            font-weight: 600;
             font-size: 0.95rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-google:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .signup-link a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 700;
+            transition: color 0.3s ease;
+        }
+
+        .signup-link a:hover {
+            color: #4f46e5;
+        }
+
+        .alert {
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border: none;
+            font-weight: 500;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .auth-card {
+                max-width: 100%;
+            }
+
+            .auth-card-body {
+                padding: 2rem 1.5rem;
+            }
+
+            .auth-header h2 {
+                font-size: 1.5rem;
+            }
+
+            body {
+                padding: 0.5rem;
+            }
+        }
+
+        /* Loading State */
+        .spinner-border {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            vertical-align: text-bottom;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
-<body class="d-flex align-items-center">
+<body>
     <%- include("./partials/nave") %>
 
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-5 col-md-7 col-11">
-                <div class="auth-card p-5">
-                    <div class="text-center mb-5">
-                        <h2 class="fw-bold text-dark mb-1">Welcome Back</h2>
-                        <p class="text-muted">Sign in to access your Blogify account</p>
-                    </div>
-
-                    <% if (typeof error !== 'undefined' && error) { %>
-                        <div class="alert alert-danger rounded-3"><%= error %></div>
-                    <% } %>
-
-                    <form id="signinForm">
-                        <div class="mb-4">
-                            <label class="form-label fw-medium">Email Address</label>
-                            <input type="email" id="email" name="email" class="form-control" required>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-medium">Password</label>
-                            <div class="input-group">
-                                <input type="password" id="password" name="password" class="form-control" required>
-                                <button type="button" class="btn btn-outline-secondary" id="togglePassword" style="border-radius: 0 12px 12px 0;">
-                                    👁️
-                                </button>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 mb-3" id="submitBtn">
-                            Sign In
-                        </button>
-                    </form>
-
-                    <div class="text-center mb-4">
-                        <a href="#" id="forgotLink" class="text-decoration-none text-primary fw-medium">
-                            Forgot Password?
-                        </a>
-                    </div>
-
-                    <div class="divider">
-                        <span>OR</span>
-                    </div>
-
-                    <a href="/user/auth/google" class="google-btn d-flex align-items-center justify-content-center gap-3 w-100 text-decoration-none text-dark">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
-                             width="24" height="24" alt="Google">
-                        Continue with Google
-                    </a>
-
-                    <p class="text-center mt-4 mb-0">
-                        Don't have an account? 
-                        <a href="/user/signup" class="text-primary fw-medium">Create one</a>
-                    </p>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-card-body">
+                <div class="auth-header">
+                    <h2>Welcome Back</h2>
+                    <p>Sign in to access your Blogify account</p>
                 </div>
+
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="alert alert-danger"><%= error %></div>
+                <% } %>
+
+                <form id="signinForm">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="input-group">
+                            <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                            <button type="button" class="btn" id="togglePassword" title="Toggle password visibility">
+                                👁️
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-signin" id="submitBtn">
+                        Sign In
+                    </button>
+                </form>
+
+                <div class="forgot-link">
+                    <a href="#" id="forgotLink">Forgot Password?</a>
+                </div>
+
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <a href="/user/auth/google" class="btn-google">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+                         width="20" height="20" alt="Google">
+                    Continue with Google
+                </a>
+
+                <p class="signup-link">
+                    Don't have an account? 
+                    <a href="/user/signup">Create one</a>
+                </p>
             </div>
         </div>
     </div>
@@ -162,7 +372,7 @@
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
-            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Signing In...`;
+            submitBtn.innerHTML = `<span class="spinner-border me-2"></span>Signing In...`;
 
             const data = {
                 email: document.getElementById('email').value.trim(),
